@@ -1,2 +1,0 @@
-# HazmatLabelDetection
-Curtin Assignment
