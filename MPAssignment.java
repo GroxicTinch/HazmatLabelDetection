@@ -2,6 +2,7 @@ import java.io.File;
 import java.io.IOException;
 
 import org.opencv.core.Core;
+import org.opencv.core.Point;
 
 /**
  *
@@ -43,6 +44,18 @@ public class MPAssignment {
 
     if(imgFO.isImage()) {
       println(imgFO.toString());
+      
+      Point p1 = new Point(339, 341);
+      Point p2 = new Point(451, 378);
+
+      try {
+        //ImageObject.saveAs(imgFO.calcRGBHistogram(10, 200, 256) ,"Output/" + imgFO.getName() + "_Histogram",  imgFO.getFileExt());
+        //ImageObject.saveAs(imgFO.returnCopyCrop(p1, p2), "Output/" + imgFO.getName() + "_Crop", imgFO.getFileExt());
+        //ImageObject.saveAs(imgFO.returnCopyResizeToRatio(0.5, 0.5), "Output/" + imgFO.getName() + "_Resize", imgFO.getFileExt());
+        ImageObject.saveAs(imgFO.returnCopyResizeToRatio(0.5, 0.5), "Output/" + imgFO.getName() + "_Resize", imgFO.getFileExt());
+      } catch (MPException e) {
+        println(e.toString());
+      }
     }
   }
 

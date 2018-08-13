@@ -4,11 +4,12 @@ import java.io.IOException;
 import org.opencv.imgcodecs.Imgcodecs;
 
 public class ImageFileObject extends ImageObject {
-  String _filename;
-  String _fullPath;
-  String _fileExt;
+  private String _name;
+  private String _filename;
+  private String _fullPath;
+  private String _fileExt;
 
-  boolean _isImage;
+  private boolean _isImage;
 
   // Constructors
   public ImageFileObject(File file) throws IOException {
@@ -20,7 +21,9 @@ public class ImageFileObject extends ImageObject {
     _fullPath = file.getCanonicalPath();
    
     dotIndex = _filename.lastIndexOf(".");
+    
     if (dotIndex >= -1) {
+      _name = _filename.substring(0,dotIndex);
       _fileExt = _filename.substring(dotIndex+1);
 
       switch(_fileExt) {
@@ -44,12 +47,14 @@ public class ImageFileObject extends ImageObject {
           break;
       }
     } else {
+      _name = _filename;
       _fileExt = "";
       _isImage = false;
     }
   }
 
   // Getters
+  public String getName() { return _name;}
   public String getFilename() { return _filename;}
   public String getFullPath() { return _fullPath;}
   public String getFileExt() { return _fileExt;}
@@ -57,24 +62,14 @@ public class ImageFileObject extends ImageObject {
   public boolean isImage() { return _isImage; }
 
   // Methods
-  public void saveAs(String name) {
+  public void saveAs(String name) throws MPException {
     saveAs(name, _fileExt);
-  }
-
-  public void saveAs(String name, String ext) {
-    String newName = name;
-
-    if(ext != "") {
-      newName += "." + ext;
-    }
-
-    Imgcodecs.imwrite(newName, _img);
   }
 
   // toString
   public String toString() {
-    return "Filename: " + _filename
-          + "\nwidth: " + _img.width()
-          + "\nheight: " + _img.height() + "\n";
+    return "\nFilename: " + _filename
+          + "\nwidth: " + this.getImg().width()
+          + "\nheight: " + this.getImg().height();
   }
 }
