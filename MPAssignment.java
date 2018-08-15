@@ -3,6 +3,7 @@ import java.io.IOException;
 
 import org.opencv.core.Core;
 import org.opencv.core.Point;
+import org.opencv.imgproc.Imgproc;
 
 /**
  *
@@ -19,13 +20,13 @@ public class MPAssignment {
       File dir = new File(args[0]);
       File[] dirList = dir.listFiles();
 
-      if(dir.exists()) {
+      if(dir.exists()) { 
         if(dirList != null && dirList.length > 0 ) {
           for(File file : dirList) {
             try {
-               processFile(file);
+              processFile(file);
             } catch (IOException e) {
-               println("Skipping file due to issue opening: " + file.getName());
+              println("Skipping file due to issue opening: " + file.getName());
             }
           }
         } else {
@@ -52,7 +53,10 @@ public class MPAssignment {
         //ImageObject.saveAs(imgFO.calcRGBHistogram(10, 200, 256) ,"Output/" + imgFO.getName() + "_Histogram",  imgFO.getFileExt());
         //ImageObject.saveAs(imgFO.returnCopyCrop(p1, p2), "Output/" + imgFO.getName() + "_Crop", imgFO.getFileExt());
         //ImageObject.saveAs(imgFO.returnCopyResizeToRatio(0.5, 0.5), "Output/" + imgFO.getName() + "_Resize", imgFO.getFileExt());
-        ImageObject.saveAs(imgFO.returnCopyResizeToRatio(0.5, 0.5), "Output/" + imgFO.getName() + "_Resize", imgFO.getFileExt());
+        ImageObject.saveAs(imgFO.returnCopyConvert(Imgproc.COLOR_BGR2GRAY), "Output/Grayscale_" + imgFO.getName(), imgFO.getFileExt());
+        ImageObject.saveAs(imgFO.returnCopyConvert(Imgproc.COLOR_BGR2HSV), "Output/HSV_" + imgFO.getName(), imgFO.getFileExt());
+        ImageObject.saveAs(imgFO.returnCopyConvert(Imgproc.COLOR_BGR2Luv), "Output/Luv_" + imgFO.getName(), imgFO.getFileExt());
+        ImageObject.saveAs(imgFO.returnCopyConvert(Imgproc.COLOR_BGR2Lab), "Output/Lab_" + imgFO.getName(), imgFO.getFileExt());
       } catch (MPException e) {
         println(e.toString());
       }

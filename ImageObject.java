@@ -90,6 +90,10 @@ public class ImageObject {
   }
 
   // Destructive Modifications
+  public void convert(int convertType) {
+    _img = returnCopyConvert(convertType);
+  }
+
   public void crop(Point p1, Point p2) {
     _img = returnCopyCrop(p1, p2);
   }
@@ -108,6 +112,13 @@ public class ImageObject {
 
 
   // Non-destructive Modifications
+  public Mat returnCopyConvert(int convertType) {
+    Mat convertedImg = new Mat();
+    Imgproc.cvtColor(_img, convertedImg, convertType);
+
+    return convertedImg;
+  }
+
   public Mat returnCopyCrop(Point p1, Point p2) {
     int width = (int) (p2.x - p1.x + 1);
     int height = (int) (p2.y - p1.y + 1);
