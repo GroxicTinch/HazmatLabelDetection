@@ -1,0 +1,2 @@
+Best method of detecting if image is rotated
+Running gaussian kernal creates incorrect files sometimes

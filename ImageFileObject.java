@@ -1,6 +1,7 @@
 import java.io.File;
 import java.io.IOException;
 
+import org.opencv.core.Mat;
 import org.opencv.imgcodecs.Imgcodecs;
 
 public class ImageFileObject extends ImageObject {
@@ -52,6 +53,16 @@ public class ImageFileObject extends ImageObject {
       _isImage = false;
     }
   }
+  
+  public ImageFileObject(Mat img, String name, String filename, String fullPath, String fileExt, boolean isImage) {
+    super(img);
+    
+    _name = name;
+    _filename = filename;
+    _fullPath = fullPath;
+    _fileExt = fileExt;
+    _isImage = isImage;
+  }
 
   // Getters
   public String getName() { return _name;}
@@ -71,5 +82,11 @@ public class ImageFileObject extends ImageObject {
     return "\nFilename: " + _filename
           + "\nwidth: " + this.getImg().width()
           + "\nheight: " + this.getImg().height();
+  }
+  
+  public ImageFileObject copy() {
+    ImageFileObject copy = new ImageFileObject(getImg(), _name, _filename, _fullPath, _fileExt, _isImage);
+    copy.setBounds(this.getBoundsCopy());
+    return copy;
   }
 }

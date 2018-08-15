@@ -3,6 +3,8 @@ import java.io.IOException;
 
 import org.opencv.core.Core;
 import org.opencv.core.Point;
+import org.opencv.core.Scalar;
+import org.opencv.highgui.HighGui;
 import org.opencv.imgproc.Imgproc;
 
 /**
@@ -46,20 +48,28 @@ public class MPAssignment {
     if(imgFO.isImage()) {
       println(imgFO.toString());
       
+      //ImageObject.saveAs(imgFO.calcRGBHistogram(10, 200, 256) ,"Output/" + imgFO.getName() + "_Histogram",  imgFO.getFileExt());
+      
       Point p1 = new Point(339, 341);
       Point p2 = new Point(451, 378);
 
-      try {
-        //ImageObject.saveAs(imgFO.calcRGBHistogram(10, 200, 256) ,"Output/" + imgFO.getName() + "_Histogram",  imgFO.getFileExt());
-        //ImageObject.saveAs(imgFO.returnCopyCrop(p1, p2), "Output/" + imgFO.getName() + "_Crop", imgFO.getFileExt());
-        //ImageObject.saveAs(imgFO.returnCopyResizeToRatio(0.5, 0.5), "Output/" + imgFO.getName() + "_Resize", imgFO.getFileExt());
-        ImageObject.saveAs(imgFO.returnCopyConvert(Imgproc.COLOR_BGR2GRAY), "Output/Grayscale_" + imgFO.getName(), imgFO.getFileExt());
-        ImageObject.saveAs(imgFO.returnCopyConvert(Imgproc.COLOR_BGR2HSV), "Output/HSV_" + imgFO.getName(), imgFO.getFileExt());
-        ImageObject.saveAs(imgFO.returnCopyConvert(Imgproc.COLOR_BGR2Luv), "Output/Luv_" + imgFO.getName(), imgFO.getFileExt());
-        ImageObject.saveAs(imgFO.returnCopyConvert(Imgproc.COLOR_BGR2Lab), "Output/Lab_" + imgFO.getName(), imgFO.getFileExt());
-      } catch (MPException e) {
-        println(e.toString());
-      }
+      //ImageObject.saveAs(imgFO.copy().crop(p1, p2).getImg(), "Output/Crop_" + imgFO.getName(), imgFO.getFileExt());
+      
+      //ImageObject.saveAs(imgFO.copy().resizeToRatio(0.5, 0.5).getImg(), "Output/" + imgFO.getName() + "_Resize", imgFO.getFileExt());
+      //ImageObject.saveAs(imgFO.copy().convert(Imgproc.COLOR_BGR2GRAY).getImg(), "Output/Grayscale_" + imgFO.getName(), imgFO.getFileExt());
+      //ImageObject.saveAs(imgFO.copy().convert(Imgproc.COLOR_BGR2HSV).getImg(), "Output/HSV_" + imgFO.getName(), imgFO.getFileExt());
+      //ImageObject.saveAs(imgFO.copy().convert(Imgproc.COLOR_BGR2Luv).getImg(), "Output/Luv_" + imgFO.getName(), imgFO.getFileExt());
+      //ImageObject.saveAs(imgFO.copy().convert(Imgproc.COLOR_BGR2Lab).getImg(), "Output/Lab_" + imgFO.getName(), imgFO.getFileExt());
+      
+      //imgFO.drawBoundingBox(p1, p2, new Scalar(0,0,255));
+      //imgFO.drawCornerCircles(p1, p2, new Scalar(255,0,0));
+      //ImageObject.saveAs(imgFO.getImg(), "Output/BoundingBox_" + imgFO.getName(), imgFO.getFileExt());
+      
+      // Fricken Broken
+      //ImageObject.saveAs(imgFO.copy().filterGaussian().getImg(), "Output/Filtered_" + imgFO.getName(), imgFO.getFileExt());
+      ImageFileObject newImgFO = imgFO.copy();
+      HighGui.imshow(newImgFO.getName(), newImgFO.filterGaussian().getImg());
+      HighGui.waitKey();
     }
   }
 

@@ -15,10 +15,12 @@ import org.opencv.imgproc.Imgproc;
 
 public class ImageObject {
   private Mat _img;
+  private Bounds _bounds;
 
   // Constructors
   public ImageObject(Mat img) {
     _img = img;
+    _bounds = new Bounds(0, 0, _img.width(), _img.height());
   }
 
   // Getters
@@ -26,11 +28,16 @@ public class ImageObject {
 
   public int getWidth() { return _img.width(); }
   public int getHeight() { return _img.height(); }
+  
+  public Bounds getBoundsCopy() { return _bounds.copy(); }
 
   public boolean isImage() { return true; }
 
   // Setters
-
+  public void setBounds(Bounds bounds) {
+    _bounds = bounds;
+  }
+  
   // Methods
   public Mat calcRGBHistogram(int bins, int histH, int histW) {
     Mat histB = new Mat();
@@ -89,70 +96,97 @@ public class ImageObject {
     return histImageMat;
   }
 
-  // Destructive Modifications
-  public void convert(int convertType) {
-    _img = returnCopyConvert(convertType);
+  // Destructive Modifications, They WILL change the _img
+  public ImageObject convert(int convertType) {
+    Imgproc.cvtColor(_img, _img, convertType);
+    return this;
   }
 
-  public void crop(Point p1, Point p2) {
-    _img = returnCopyCrop(p1, p2);
-  }
-
-  public void crop(Point p1, int width, int height) {
-    _img = returnCopyCrop(p1, width, height);
-  }
-
-  public void resizeToPixel(int newWidth, int newHeight) {
-    _img = returnCopyResizeToPixel(newWidth, newHeight);
-  }
-
-  public void resizeToRatio(double newWidthRatio, double newHeightRatio) {
-    _img = returnCopyResizeToRatio(newWidthRatio, newHeightRatio);
-  }
-
-
-  // Non-destructive Modifications
-  public Mat returnCopyConvert(int convertType) {
-    Mat convertedImg = new Mat();
-    Imgproc.cvtColor(_img, convertedImg, convertType);
-
-    return convertedImg;
-  }
-
-  public Mat returnCopyCrop(Point p1, Point p2) {
-    int width = (int) (p2.x - p1.x + 1);
-    int height = (int) (p2.y - p1.y + 1);
+  public ImageObject crop(Point p1, Point p2) {
+    int width = (int) (p2.x - p1.x);
+    int height = (int) (p2.y - p1.y);
     
-    return returnCopyCrop(p1, width, height);
+    return crop(p1, width, height);
   }
 
-  public Mat returnCopyCrop(Point p1, int width, int height) {
-    Bounds bounds = new Bounds(p1.x, p1.y, width, height);
-    bounds.setLimits(0, 0, _img.width(), _img.height());
+  public ImageObject crop(Point p1, int width, int height) {
+    _bounds.setBox(p1.x, p1.y, width, height);
 
-    return _img.submat(bounds.getRect());
+    _img = _img.submat(_bounds.getBoxRect());
+    return this;
+  }
+  
+  public ImageObject drawBoundingBox(Point p1, Point p2, Scalar color) {
+    Imgproc.rectangle(_img, p1, p2, color, 2);
+    return this;
+  }
+  
+  public ImageObject drawBoundingBox(Bounds bounds, Scalar color) {
+    drawBoundingBox(bounds.getBoxP1(), bounds.getBoxP2(), color);
+    return this;
+  }
+  
+  public ImageObject drawCornerCircles(Point p1, Point p2, Scalar color) {
+    Imgproc.circle(_img, p1, 5, color, 1);
+    Imgproc.circle(_img, new Point(p2.x, p1.y), 5, color, 1);
+    Imgproc.circle(_img, new Point(p1.x, p2.y), 5, color, 1);
+    Imgproc.circle(_img, p2, 5, color, 1);
+    return this;
+  }
+  
+  public ImageObject drawCornerCircles(Bounds bounds, Scalar color) {
+    drawCornerCircles(bounds.getBoxP1(), bounds.getBoxP2(), color);
+    return this;
   }
 
-  public Mat returnCopyResizeToPixel(int newWidth, int newHeight) {
-    Mat resizedImage = new Mat();
+  public ImageObject filterPrewit() {
+    Mat kernel = new Mat(3,3, CvType.CV_32F);
+    kernel.put(-1,0,1);
+    kernel.put(-1,0,1);
+    kernel.put(-1,0,1);
+    
+    Imgproc.filter2D(_img, _img, -1, kernel);
+    
+    kernel = new Mat(3,3, CvType.CV_32F);
+    kernel.put(-1,-1,-1);
+    kernel.put(0,0,0);
+    kernel.put(1,1,1);
+    
+    Imgproc.filter2D(_img, _img, -1, kernel);
+    return this;
+  }
+  
+  public ImageObject filterGaussian() {
+    int kernelSize = 5;
+    Mat kernel = new Mat(kernelSize,kernelSize, CvType.CV_32F);
+    
+    kernel.put(1,4,7,4,1);
+    kernel.put(4,16,26,16,4);
+    kernel.put(7,26,41,26,7);
+    kernel.put(4,16,26,16,4);
+    kernel.put(1,4,7,4,1);
+    
+    //kernel.inv();
+    
+    Imgproc.filter2D(_img, _img, -1, kernel);
+    return this;
+  }
+  
+  public ImageObject resizeToPixel(int newWidth, int newHeight) {
     Size size = new Size(newWidth, newHeight);
 
-    Imgproc.resize(_img, resizedImage, size);
-
-    return resizedImage;
+    Imgproc.resize(_img, _img, size);
+    return this;
   }
 
-  public Mat returnCopyResizeToRatio(double newWidthRatio, double newHeightRatio) {
-    Mat resizedImage = new Mat();
-
+  public ImageObject resizeToRatio(double newWidthRatio, double newHeightRatio) {
     int newWidth = (int) (_img.width() * newWidthRatio);
     int newHeight = (int) (_img.height() * newHeightRatio);
 
     Size size = new Size(newWidth, newHeight);
 
-    Imgproc.resize(_img, resizedImage, size);
-
-    return resizedImage;
+    Imgproc.resize(_img, _img, size);
+    return this;
   }
   
   public void saveAs(String name) throws MPException {
@@ -167,7 +201,7 @@ public class ImageObject {
     saveAs(img, name, "png");
   }
   
-  public static void saveAs(Mat img, String name, String ext) throws MPException {
+  public static void saveAs(Mat img, String name, String ext) {
     File file;
     String newName = name;
     
@@ -182,7 +216,18 @@ public class ImageObject {
       
       Imgcodecs.imwrite(newName, img);
     } else {
-      throw new MPException("Matrix trying to be saved has width/height of 0");
+      try {
+        throw new MPException("Matrix trying to be saved has width/height of 0");
+      } catch (MPException e) {
+        System.out.println(e.toString());
+      }
     }
+  }
+  
+  public ImageObject copy() {
+    ImageObject copy = new ImageObject(_img);
+    copy.setBounds(_bounds.copy());
+    
+    return copy;
   }
 }

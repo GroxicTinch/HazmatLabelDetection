@@ -18,4 +18,9 @@ public class Utils {
     var = Math.min(Math.max(min, var), (double)max);
     return var;
   }
+
+  public static double clamp(double var, double min, double max) {
+    var = Math.min(Math.max(min, var), max);
+    return var;
+  }
 }
