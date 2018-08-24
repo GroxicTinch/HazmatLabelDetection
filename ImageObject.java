@@ -39,7 +39,7 @@ public class ImageObject {
   }
   
   // Methods
-  public Mat calcRGBHistogram(int bins, int histH, int histW) {
+  public Mat calcHistogram(int bins, int histH, int histW, boolean grayscale) {
     Mat histB = new Mat();
     Mat histG = new Mat();
     Mat histR = new Mat();
@@ -60,12 +60,16 @@ public class ImageObject {
     
     //                Mat array, channel as ints,      mask,  dest,     size, colour range
     Imgproc.calcHist(bgr_planes, new MatOfInt(0), new Mat(), histB, histSize, ranges);
-    Imgproc.calcHist(bgr_planes, new MatOfInt(1), new Mat(), histG, histSize, ranges);
-    Imgproc.calcHist(bgr_planes, new MatOfInt(2), new Mat(), histR, histSize, ranges);
+    if(!grayscale) {
+      Imgproc.calcHist(bgr_planes, new MatOfInt(1), new Mat(), histG, histSize, ranges);
+      Imgproc.calcHist(bgr_planes, new MatOfInt(2), new Mat(), histR, histSize, ranges);
+    }
     
     Core.normalize(histB, histB, 0, histImageMat.height(), Core.NORM_MINMAX, -1, new Mat());
-    Core.normalize(histG, histG, 0, histImageMat.height(), Core.NORM_MINMAX, -1, new Mat());
-    Core.normalize(histR, histR, 0, histImageMat.height(), Core.NORM_MINMAX, -1, new Mat());
+    if(!grayscale) {
+      Core.normalize(histG, histG, 0, histImageMat.height(), Core.NORM_MINMAX, -1, new Mat());
+      Core.normalize(histR, histR, 0, histImageMat.height(), Core.NORM_MINMAX, -1, new Mat());
+    }
 
     for (int i = 0; i < bins; i++) {
       Imgproc.line(histImageMat, // ImageMat
@@ -76,7 +80,8 @@ public class ImageObject {
                     8, // lineType 8, 4 or CV_AA
                     0);// Shift
 
-      Imgproc.line(histImageMat, // ImageMat
+      if(!grayscale) {
+        Imgproc.line(histImageMat, // ImageMat
                     new Point(binW * i, histH - Math.round(histG.get(i, 0)[0])),           // PointA of Line
                     new Point(binW * (i+1), histH - Math.round(histG.get(i+1, 0)[0])),     // PointB of Line
                     new Scalar(0, 255, 0),  // Colour
@@ -84,13 +89,14 @@ public class ImageObject {
                     8, // lineType 8, 4 or CV_AA
                     0);// Shift
 
-      Imgproc.line(histImageMat, // ImageMat
+        Imgproc.line(histImageMat, // ImageMat
                     new Point(binW * i, histH - Math.round(histR.get(i, 0)[0])),           // PointA of Line
                     new Point(binW * (i+1), histH - Math.round(histR.get(i+1, 0)[0])),     // PointB of Line
                     new Scalar(0, 0, 255),  // Colour
                     1, // Thickness
                     8, // lineType 8, 4 or CV_AA
                     0);// Shift
+      }
     }
 
     return histImageMat;
@@ -138,6 +144,11 @@ public class ImageObject {
     drawCornerCircles(bounds.getBoxP1(), bounds.getBoxP2(), color);
     return this;
   }
+  
+  public ImageObject equalizeContrast() {
+    Imgproc.equalizeHist(_img, _img);
+    return this;
+  }
 
   public ImageObject filterPrewit() {
     Mat kernel = new Mat(3,3, CvType.CV_32F);
@@ -158,7 +169,7 @@ public class ImageObject {
   
   public ImageObject filterGaussian() {
     int kernelSize = 5;
-    Mat kernel = new Mat(kernelSize,kernelSize, CvType.CV_32F);
+    Mat kernel = new Mat(kernelSize, kernelSize, CvType.CV_32F);
     
     kernel.put(1,4,7,4,1);
     kernel.put(4,16,26,16,4);
@@ -167,8 +178,49 @@ public class ImageObject {
     kernel.put(1,4,7,4,1);
     
     //kernel.inv();
-    
     Imgproc.filter2D(_img, _img, -1, kernel);
+    return this;
+  }
+  
+  public ImageObject morphDilate(int elementSize) {
+    Mat element = Imgproc.getStructuringElement(Imgproc.MORPH_RECT, new  Size(2*elementSize + 1, 2*elementSize+1));
+    Imgproc.morphologyEx(_img, _img, Imgproc.MORPH_DILATE, element);
+    
+    return this;
+  }
+  
+  public ImageObject morphErode(int elementSize) {
+    Mat element = Imgproc.getStructuringElement(Imgproc.MORPH_RECT, new  Size(2*elementSize + 1, 2*elementSize+1));
+    Imgproc.morphologyEx(_img, _img, Imgproc.MORPH_ERODE, element);
+    
+    return this;
+  }
+  
+  public ImageObject morphOpen(int elementSize) {
+    Mat element = Imgproc.getStructuringElement(Imgproc.MORPH_RECT, new  Size(2*elementSize + 1, 2*elementSize+1));
+    Imgproc.morphologyEx(_img, _img, Imgproc.MORPH_OPEN, element);
+    
+    return this;
+  }
+  
+  public ImageObject morphClose(int elementSize) {
+    Mat element = Imgproc.getStructuringElement(Imgproc.MORPH_RECT, new  Size(2*elementSize + 1, 2*elementSize+1));
+    Imgproc.morphologyEx(_img, _img, Imgproc.MORPH_CLOSE, element);
+       
+    return this;
+  }
+  
+  public ImageObject morphGradient(int elementSize) {
+    Mat element = Imgproc.getStructuringElement(Imgproc.MORPH_RECT, new  Size(2*elementSize + 1, 2*elementSize+1));
+    Imgproc.morphologyEx(_img, _img, Imgproc.MORPH_GRADIENT, element);
+    
+    return this;
+  }
+  
+  public ImageObject morphBlackhat(int elementSize) {
+    Mat element = Imgproc.getStructuringElement(Imgproc.MORPH_RECT, new  Size(2*elementSize + 1, 2*elementSize+1));
+    Imgproc.morphologyEx(_img, _img, Imgproc.MORPH_BLACKHAT, element);
+    
     return this;
   }
   
@@ -229,5 +281,9 @@ public class ImageObject {
     copy.setBounds(_bounds.copy());
     
     return copy;
+  }
+  
+  public String matToString() {    
+    return _img.dump();
   }
 }

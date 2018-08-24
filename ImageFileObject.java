@@ -85,7 +85,10 @@ public class ImageFileObject extends ImageObject {
   }
   
   public ImageFileObject copy() {
-    ImageFileObject copy = new ImageFileObject(getImg(), _name, _filename, _fullPath, _fileExt, _isImage);
+    Mat copyMat = new Mat();
+    getImg().copyTo(copyMat);
+    
+    ImageFileObject copy = new ImageFileObject(copyMat, _name, _filename, _fullPath, _fileExt, _isImage);
     copy.setBounds(this.getBoundsCopy());
     return copy;
   }
