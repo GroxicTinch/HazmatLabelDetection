@@ -4,6 +4,7 @@ import java.io.IOException;
 import org.opencv.core.Core;
 import org.opencv.core.CvType;
 import org.opencv.core.Mat;
+import org.opencv.core.MatOfPoint;
 import org.opencv.core.MatOfPoint2f;
 import org.opencv.core.Point;
 import org.opencv.core.Scalar;
@@ -65,28 +66,17 @@ public class MPAssignment {
       HighGui.imshow("Filtered" + newImgFO.getFilename(), newImgFO.filterGaussian().getImg());
       HighGui.waitKey();*/
       
+      //https://github.com/opencv/opencv/blob/master/samples/java/tutorial_code/TrackingMotion/good_features_to_track/GoodFeaturesToTrackDemo.java
+      MatOfPoint corners = new MatOfPoint();
+
+      int maxCorners = 0; // Infinite
+      double quality = 0.01;
+      double minDist = 10;
       
-      Mat harrisMat = new Mat();
-      Mat harrisMatNormal = new Mat();
-      //Mat harrisMatNormalScaled = new Mat();
-      int blockSize = 3;
-      int apertureSize = 1;
-      double k = 0.1; // I dont really know what K does
+      Imgproc.goodFeaturesToTrack(imgFO.copy().convert(Imgproc.COLOR_BGR2GRAY).getImg(), corners, maxCorners, quality, minDist);
       
-      int threshold = 200;
-      
-      Imgproc.cornerHarris(imgFO.copy().convert(Imgproc.COLOR_BGR2GRAY).getImg(), harrisMat, blockSize, apertureSize, k);
-      
-      Core.normalize(harrisMat, harrisMatNormal, 0, 255, Core.NORM_MINMAX, CvType.CV_32F, new Mat());
-      //Core.convertScaleAbs(harrisMatNormal, harrisMatNormalScaled);
-      
-      for( int row = 0; row < harrisMatNormal.rows() ; row++){
-        for( int col = 0; col < harrisMatNormal.cols(); col++){
-          System.out.println(harrisMatNormal.get(row, col)[0] + " < " + threshold);
-          if ((int) harrisMatNormal.get(row, col)[0] > threshold){
-            Imgproc.circle(imgFO.getImg(), new Point(row, col), 10 , new Scalar(0,0,255), 1 ,8 , 0);
-          }
-        }
+      for(Point corner : corners.toArray()) {
+        Imgproc.circle(imgFO.getImg(), new Point(corner.x, corner.y), 4, new Scalar(0, 0, 255), 1);
       }
       
       HighGui.imshow("Filtered" + imgFO.getFilename(), imgFO.getImg());
