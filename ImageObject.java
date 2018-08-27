@@ -149,35 +149,65 @@ public class ImageObject {
     Imgproc.equalizeHist(_img, _img);
     return this;
   }
-
-  public ImageObject filterPrewit() {
-    Mat kernel = new Mat(3,3, CvType.CV_32F);
-    kernel.put(-1,0,1);
-    kernel.put(-1,0,1);
-    kernel.put(-1,0,1);
+  
+  public ImageObject filterGaussian() {
+    Mat kernel = Utils.matPut(5, 5, CvType.CV_32F, new int[][]{
+      {1, 4, 7, 4,1},
+      {4,16,26,16,4},
+      {7,26,41,26,7},
+      {4,16,26,16,4},
+      {1, 4, 7, 4,1}});
+    
+    // [Q]What is the 1/273?
     
     Imgproc.filter2D(_img, _img, -1, kernel);
+
+    return this;
+  }
+  
+  public ImageObject filterLaplacian() {
+    Mat kernel = Utils.matPut(3, 3, CvType.CV_32F, new int[][]{
+      {0, 1,0},
+      {1,-4,1},
+      {0, 1,0}});
     
-    kernel = new Mat(3,3, CvType.CV_32F);
-    kernel.put(-1,-1,-1);
-    kernel.put(0,0,0);
-    kernel.put(1,1,1);
+    // [Q]What is the 1/273?
+    
+    Imgproc.filter2D(_img, _img, -1, kernel);
+
+    return this;
+  }
+
+  public ImageObject filterPrewit() {
+    Mat kernel = Utils.matPut(3, 3, CvType.CV_32F, new int[][]{
+      {-1,0,1},
+      {-1,0,1},
+      {-1,0,1}});
+    
+    Imgproc.filter2D(_img, _img, -1, kernel);
+
+    kernel = Utils.matPut(3, 3, CvType.CV_32F, new int[][]{
+      {-1,-1,-1},
+      { 0, 0, 0},
+      { 1, 1, 1}});
     
     Imgproc.filter2D(_img, _img, -1, kernel);
     return this;
   }
   
-  public ImageObject filterGaussian() {
-    int kernelSize = 5;
-    Mat kernel = new Mat(kernelSize, kernelSize, CvType.CV_32F);
+  public ImageObject filterSobel() {
+    Mat kernel = Utils.matPut(3, 3, CvType.CV_32F, new int[][]{
+      {-1,0,1},
+      {-2,0,2},
+      {-1,0,1}});
     
-    kernel.put(1,4,7,4,1);
-    kernel.put(4,16,26,16,4);
-    kernel.put(7,26,41,26,7);
-    kernel.put(4,16,26,16,4);
-    kernel.put(1,4,7,4,1);
+    Imgproc.filter2D(_img, _img, -1, kernel);
+
+    kernel = Utils.matPut(3, 3, CvType.CV_32F, new int[][]{
+      {-1,-2,-1},
+      { 0, 0, 0},
+      { 1, 2, 1}});
     
-    //kernel.inv();
     Imgproc.filter2D(_img, _img, -1, kernel);
     return this;
   }

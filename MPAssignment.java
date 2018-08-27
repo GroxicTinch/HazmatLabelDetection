@@ -2,6 +2,7 @@ import java.io.File;
 import java.io.IOException;
 
 import org.opencv.core.Core;
+import org.opencv.core.CvType;
 import org.opencv.core.Mat;
 import org.opencv.core.MatOfPoint2f;
 import org.opencv.core.Point;
@@ -58,90 +59,37 @@ public class MPAssignment {
 
     if(imgFO.isImage()) {
       println(imgFO.toString());
+      HighGui.imshow(imgFO.getFilename(), imgFO.copy().getImg());
       
-      //ImageObject.saveAs(imgFO.calcHistogram(10, 200, 256, false) ,"Output/" + imgFO.getName() + "_Histogram",  imgFO.getFileExt());
+      /*ImageFileObject newImgFO = imgFO.copy();
+      HighGui.imshow("Filtered" + newImgFO.getFilename(), newImgFO.filterGaussian().getImg());
+      HighGui.waitKey();*/
       
-      Point p1 = new Point(339, 341);
-      Point p2 = new Point(451, 378);
       
-      /*
-      imgFO.convert(Imgproc.COLOR_BGR2GRAY);
-      HighGui.imshow("equalized " + imgFO.getFilename(), imgFO.copy().equalizeContrast().getImg());
-      HighGui.imshow("grayscale " + imgFO.getFilename(), imgFO.getImg());
-      HighGui.waitKey();
-      */
-
-      //ImageObject.saveAs(imgFO.copy().crop(p1, p2).getImg(), "Output/Crop_" + imgFO.getName(), imgFO.getFileExt());
+      Mat harrisMat = new Mat();
+      Mat harrisMatNormal = new Mat();
+      //Mat harrisMatNormalScaled = new Mat();
+      int blockSize = 3;
+      int apertureSize = 1;
+      double k = 0.1; // I dont really know what K does
       
-      //ImageObject.saveAs(imgFO.copy().resizeToRatio(0.5, 0.5).getImg(), "Output/" + imgFO.getName() + "_Resize", imgFO.getFileExt());
-      //ImageObject.saveAs(imgFO.copy().convert(Imgproc.COLOR_BGR2GRAY).getImg(), "Output/Grayscale_" + imgFO.getName(), imgFO.getFileExt());
-      //ImageObject.saveAs(imgFO.copy().convert(Imgproc.COLOR_BGR2HSV).getImg(), "Output/HSV_" + imgFO.getName(), imgFO.getFileExt());
-      //ImageObject.saveAs(imgFO.copy().convert(Imgproc.COLOR_BGR2Luv).getImg(), "Output/Luv_" + imgFO.getName(), imgFO.getFileExt());
-      //ImageObject.saveAs(imgFO.copy().convert(Imgproc.COLOR_BGR2Lab).getImg(), "Output/Lab_" + imgFO.getName(), imgFO.getFileExt());
+      int threshold = 200;
       
-      //imgFO.drawBoundingBox(p1, p2, new Scalar(0,0,255));
-      //imgFO.drawCornerCircles(p1, p2, new Scalar(255,0,0));
-      //ImageObject.saveAs(imgFO.getImg(), "Output/BoundingBox_" + imgFO.getName(), imgFO.getFileExt());
+      Imgproc.cornerHarris(imgFO.copy().convert(Imgproc.COLOR_BGR2GRAY).getImg(), harrisMat, blockSize, apertureSize, k);
       
-      // Fricken Broken
-      /*
-      //ImageObject.saveAs(imgFO.copy().convert(Imgproc.COLOR_BGR2GRAY).filterGaussian().getImg(), "Output/Filtered_" + imgFO.getName(), imgFO.getFileExt());
+      Core.normalize(harrisMat, harrisMatNormal, 0, 255, Core.NORM_MINMAX, CvType.CV_32F, new Mat());
+      //Core.convertScaleAbs(harrisMatNormal, harrisMatNormalScaled);
       
-      ImageFileObject newImgFO = imgFO.copy();
+      for( int row = 0; row < harrisMatNormal.rows() ; row++){
+        for( int col = 0; col < harrisMatNormal.cols(); col++){
+          System.out.println(harrisMatNormal.get(row, col)[0] + " < " + threshold);
+          if ((int) harrisMatNormal.get(row, col)[0] > threshold){
+            Imgproc.circle(imgFO.getImg(), new Point(row, col), 10 , new Scalar(0,0,255), 1 ,8 , 0);
+          }
+        }
+      }
       
-      HighGui.imshow(newImgFO.getFilename(), newImgFO.getImg());
-      HighGui.waitKey();
-      
-      Mat blur = newImgFO.getImg();
-      
-      //Imgproc.medianBlur(blur, blur, 5);
-      
-      HighGui.imshow(newImgFO.getFilename(), blur);
-      HighGui.waitKey();
-      
-      newImgFO.filterGaussian();
-      
-      println("Filtered\n" + newImgFO.matToString());
-      
-      Mat normalized = newImgFO.getImg();
-      
-      HighGui.imshow("PreNormal " + newImgFO.getFilename(), newImgFO.getImg());
-      HighGui.waitKey();
-      
-      Core.normalize(normalized, normalized, 0, 255, Core.NORM_MINMAX, -1, new Mat());
-      
-      //println("Normalized\n" + newImgFO.matToString());
-      
-      HighGui.imshow("Normal " + newImgFO.getFilename(), normalized);
-      HighGui.waitKey();
-      */
-      
-      // Affine Transform
-      /*
-      Mat affined = new Mat();
-      Mat src = imgFO.copy().getImg();
-      
-      Point[] srcTri = new Point[3];
-      srcTri[0] = new Point( 0, 0 );
-      srcTri[1] = new Point( src.cols() - 1, 0 );
-      srcTri[2] = new Point( 0, src.rows() - 1 );
-      
-      Point[] dstTri = new Point[3];
-      dstTri[0] = new Point( 200, 0 );
-      dstTri[1] = new Point( src.cols() + 200, 0 );
-      dstTri[2] = new Point( 0, src.rows() - 1 );
-      
-      Mat warp_mat = Imgproc.getAffineTransform(new MatOfPoint2f(srcTri), new MatOfPoint2f(dstTri));
-      
-      Imgproc.warpAffine(src, affined, warp_mat, src.size());
-      
-      HighGui.imshow(imgFO.getFilename(), affined);
-      HighGui.waitKey();
-      */
-      
-      // Morphology
-      HighGui.imshow(imgFO.getFilename(), imgFO.getImg());
-      HighGui.imshow("morphed" + imgFO.getFilename(), imgFO.copy().morphBlackhat(2).getImg());
+      HighGui.imshow("Filtered" + imgFO.getFilename(), imgFO.getImg());
       HighGui.waitKey();
     }
   }
