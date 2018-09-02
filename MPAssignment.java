@@ -10,6 +10,7 @@ import org.opencv.core.Point;
 import org.opencv.core.Scalar;
 import org.opencv.core.Size;
 import org.opencv.highgui.HighGui;
+import org.opencv.imgcodecs.Imgcodecs;
 import org.opencv.imgproc.Imgproc;
 
 /**
@@ -60,29 +61,43 @@ public class MPAssignment {
 
     if(imgFO.isImage()) {
       println(imgFO.toString());
-      HighGui.imshow(imgFO.getFilename(), imgFO.copy().getImg());
+      //HighGui.imshow(imgFO.getFilename(), imgFO.copy().getImg());
       
       /*ImageFileObject newImgFO = imgFO.copy();
       HighGui.imshow("Filtered" + newImgFO.getFilename(), newImgFO.filterGaussian().getImg());
       HighGui.waitKey();*/
       
-      //https://github.com/opencv/opencv/blob/master/samples/java/tutorial_code/TrackingMotion/good_features_to_track/GoodFeaturesToTrackDemo.java
-      MatOfPoint corners = new MatOfPoint();
-
-      int maxCorners = 0; // Infinite
-      double quality = 0.01;
-      double minDist = 10;
+      int newHeight = imgFO.getHeight() / 2;
       
-      Imgproc.goodFeaturesToTrack(imgFO.copy().convert(Imgproc.COLOR_BGR2GRAY).getImg(), corners, maxCorners, quality, minDist);
+      ImageObject imgTop = imgFO.copy().crop(new Point(0,0), imgFO.getWidth(), newHeight);
+      ImageObject imgBottom = imgFO.copy().crop(new Point(0, newHeight), imgFO.getWidth(), newHeight);
       
-      for(Point corner : corners.toArray()) {
-        Imgproc.circle(imgFO.getImg(), new Point(corner.x, corner.y), 4, new Scalar(0, 0, 255), 1);
-      }
+      // [TODO] Create proper way to create masks
+      Mat topMask = Imgcodecs.imread("./SampleData/Mask/MaskTopTemp.png");
+      Imgproc.cvtColor(topMask, topMask, Imgproc.COLOR_BGR2GRAY);
+      Mat bottomMask = Imgcodecs.imread("./SampleData/Mask/MaskBottomTemp.png");
+      Imgproc.cvtColor(bottomMask, bottomMask, Imgproc.COLOR_BGR2GRAY);
       
-      HighGui.imshow("Filtered" + imgFO.getFilename(), imgFO.getImg());
+      HighGui.imshow("Top " + imgFO.getFilename(), imgTop.getImg());
+      HighGui.imshow("Bottom " + imgFO.getFilename(), imgBottom.getImg());
+      
+      HighGui.moveWindow("Top " + imgFO.getFilename(), 0, 0);
+      HighGui.moveWindow("Bottom " + imgFO.getFilename(), 0, imgTop.getHeight()+30);
+      
+      System.out.println("Top colour: " + imgTop.getMainColor(topMask)
+                     + "\nBottom colour: " + imgBottom.getMainColor(bottomMask));
+      
       HighGui.waitKey();
+      
+      /*HighGui.imshow(imgFO.getFilename(), imgFO.convert(Imgproc.COLOR_BGR2HSV).getImg());
+      HighGui.waitKey();*/
     }
   }
+  
+  // Current progress
+  /*
+   * placard-7-radioactive.png is misidentified, sees top as white instead of yellow
+   */
   
   static void println(String message) {
     System.out.println(message);
