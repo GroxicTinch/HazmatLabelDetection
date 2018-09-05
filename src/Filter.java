@@ -4,7 +4,7 @@ import org.opencv.core.Mat;
 import org.opencv.imgproc.Imgproc;
 
 public class Filter {
-  public static Mat filterGaussian(Mat img) {
+  public static Mat gaussian(Mat img) {
     Mat outputMat = new Mat();
     
     Mat kernel = Utils.matPut(5, 5, CvType.CV_32F, new int[][]{
@@ -21,7 +21,42 @@ public class Filter {
     return outputMat;
   }
   
-  public static Mat filterLaplacian(Mat img) {
+  public static Mat houghCustom(Mat img) {
+    Mat outputMat = new Mat();
+    Mat houghImage = new Mat();
+    
+    for(int col = 0; col < img.width(); col++) {
+      for(int row = 0; row < img.width(); row++) {
+        if(img.get(row, col)[0] == 255) {
+          // Should pass if on a line,       don't need 360 because a line pointing up is the same as a line pointing down
+          for(int currAngle = 0; currAngle < 180; currAngle++) {
+            double xcosO = col*Math.cos(currAngle);
+            double ysinO = row*Math.sin(currAngle);
+            
+            int dist = (int) Math.round(xcosO + ysinO);
+            
+            if(dist >= 0) { // [Q] Dont fully understand this
+              int currVal = (int) (houghImage.get(currAngle, dist)[0] + 1);
+              
+              houghImage.put(currAngle, dist, currVal);
+            }
+          }
+        }
+      }
+    }
+
+    return outputMat;
+  }
+  
+  public static Mat hough(Mat img) {
+    Mat outputMat = new Mat();
+    
+    Imgproc.HoughLines(img, outputMat, 0, 0, 1);
+
+    return outputMat;
+  }
+  
+  public static Mat laplacian(Mat img) {
     Mat outputMat = new Mat();
     
     Mat kernel = Utils.matPut(3, 3, CvType.CV_32F, new int[][]{
@@ -36,15 +71,15 @@ public class Filter {
     return outputMat;
   }
   
-  public static Mat filterPrewitt(Mat img) {
+  public static Mat prewitt(Mat img) {
     Mat outputMat = new Mat();
     
-    Core.add(filterPrewittX(img), filterPrewittY(img), outputMat);;
+    Core.add(prewittX(img), prewittY(img), outputMat);;
     
     return outputMat;
   }
   
-  public static Mat filterPrewittX(Mat img) {
+  public static Mat prewittX(Mat img) {
     Mat outputMat = new Mat();
     Mat corrMat = new Mat();
     Mat convMat = new Mat();
@@ -63,7 +98,7 @@ public class Filter {
     return outputMat;
   }
   
-  public static Mat filterPrewittY(Mat img) {
+  public static Mat prewittY(Mat img) {
     Mat outputMat = new Mat();
     Mat corrMat = new Mat();
     Mat convMat = new Mat();
@@ -82,15 +117,15 @@ public class Filter {
     return outputMat;
   }
   
-  public static Mat filterSobel(Mat img) {
+  public static Mat sobel(Mat img) {
     Mat outputMat = new Mat();
     
-    Core.add(filterSobelX(img), filterSobelY(img), outputMat);;
+    Core.add(sobelX(img), sobelY(img), outputMat);;
     
     return outputMat;
   }
   
-  public static Mat filterSobelX(Mat img) {
+  public static Mat sobelX(Mat img) {
     Mat outputMat = new Mat();
     Mat corrMat = new Mat();
     Mat convMat = new Mat();
@@ -109,7 +144,7 @@ public class Filter {
     return outputMat;
   }
   
-  public static Mat filterSobelY(Mat img) {
+  public static Mat sobelY(Mat img) {
     Mat outputMat = new Mat();
     Mat corrMat = new Mat();
     Mat convMat = new Mat();

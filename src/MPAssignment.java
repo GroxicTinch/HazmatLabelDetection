@@ -1,14 +1,19 @@
 import java.io.File;
 import java.io.IOException;
+import java.util.ArrayList;
+import java.util.List;
 
 import org.opencv.core.Core;
 import org.opencv.core.CvType;
 import org.opencv.core.Mat;
 import org.opencv.core.MatOfPoint;
 import org.opencv.core.MatOfPoint2f;
+import org.opencv.core.MatOfRect;
 import org.opencv.core.Point;
+import org.opencv.core.Rect;
 import org.opencv.core.Scalar;
 import org.opencv.core.Size;
+import org.opencv.features2d.MSER;
 import org.opencv.highgui.HighGui;
 import org.opencv.imgcodecs.Imgcodecs;
 import org.opencv.imgproc.Imgproc;
@@ -68,12 +73,25 @@ public class MPAssignment {
       winShow(origImgFO.getFilename(), origImgFO.getImg());
       
       Mat filtered = new Mat();
-      Mat output = new Mat();
-      filtered = Filter.filterPrewitt(imgFO.convert(Imgproc.COLOR_BGR2GRAY).getImg());
+      Mat out = imgFO.copy().getImg();
+      filtered = Filter.prewitt(imgFO.convert(Imgproc.COLOR_BGR2GRAY).getImg());
       
-      Imgproc.Canny(filtered, output, 100, 500);
+      MSER mser = MSER.create(15, 60, 10000, 0.25, 1, 1000, 1, 1, 1);
+      
+      List<MatOfPoint> msers = new ArrayList<MatOfPoint>();
+      MatOfRect bboxes = new MatOfRect();
+      
+      mser.detectRegions(filtered, msers, bboxes);
+            
+      //Imgproc.Canny(filtered, filtered, 900, 1000);
+      
+      for(MatOfPoint blob : msers) {
+        Rect rect = Imgproc.boundingRect(blob);
+        // draw enclosing rectangle (all same color, but you could use variable i to make them unique)
+        Imgproc.rectangle(out, new Point(rect.x, rect.y), new Point(rect.x + rect.width, rect.y + rect.height), new Scalar(0,0,255), 2);
+      }
 
-      winShowRight("PrewitX "+ imgFO.getFilename(), output);
+      winShowRight("Prewitt "+ imgFO.getFilename(), out);
       winWait();
             
       /*ImageFileObject newImgFO = imgFO.copy();
