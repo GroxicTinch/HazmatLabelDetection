@@ -19,6 +19,10 @@ import org.opencv.imgproc.Imgproc;
  */
 public class MPAssignment {
 
+  static int winX = 0;
+  static int winY = 0;
+  static int winW = 0;
+  static int winH = 0;
   /**
   * @param args the command line arguments
   */
@@ -57,39 +61,23 @@ public class MPAssignment {
   }
 
   static void processFile(File file) throws IOException {
+    ImageFileObject origImgFO = new ImageFileObject(file);
     ImageFileObject imgFO = new ImageFileObject(file);
 
     if(imgFO.isImage()) {
-      println(imgFO.toString());
-      //HighGui.imshow(imgFO.getFilename(), imgFO.copy().getImg());
+      winShow(origImgFO.getFilename(), origImgFO.getImg());
       
+      Mat filtered = new Mat();
+      Mat output = new Mat();
+      filtered = Filter.filterPrewitt(imgFO.convert(Imgproc.COLOR_BGR2GRAY).getImg());
+      
+      Imgproc.Canny(filtered, output, 100, 500);
+
+      winShowRight("PrewitX "+ imgFO.getFilename(), output);
+      winWait();
+            
       /*ImageFileObject newImgFO = imgFO.copy();
       HighGui.imshow("Filtered" + newImgFO.getFilename(), newImgFO.filterGaussian().getImg());
-      HighGui.waitKey();*/
-      
-      int newHeight = imgFO.getHeight() / 2;
-      
-      ImageObject imgTop = imgFO.copy().crop(new Point(0,0), imgFO.getWidth(), newHeight);
-      ImageObject imgBottom = imgFO.copy().crop(new Point(0, newHeight), imgFO.getWidth(), newHeight);
-      
-      // [TODO] Create proper way to create masks
-      Mat topMask = Imgcodecs.imread("./SampleData/Mask/MaskTopTemp.png");
-      Imgproc.cvtColor(topMask, topMask, Imgproc.COLOR_BGR2GRAY);
-      Mat bottomMask = Imgcodecs.imread("./SampleData/Mask/MaskBottomTemp.png");
-      Imgproc.cvtColor(bottomMask, bottomMask, Imgproc.COLOR_BGR2GRAY);
-      
-      HighGui.imshow("Top " + imgFO.getFilename(), imgTop.getImg());
-      HighGui.imshow("Bottom " + imgFO.getFilename(), imgBottom.getImg());
-      
-      HighGui.moveWindow("Top " + imgFO.getFilename(), 0, 0);
-      HighGui.moveWindow("Bottom " + imgFO.getFilename(), 0, imgTop.getHeight()+30);
-      
-      System.out.println("Top colour: " + imgTop.getMainColor(topMask)
-                     + "\nBottom colour: " + imgBottom.getMainColor(bottomMask));
-      
-      HighGui.waitKey();
-      
-      /*HighGui.imshow(imgFO.getFilename(), imgFO.convert(Imgproc.COLOR_BGR2HSV).getImg());
       HighGui.waitKey();*/
     }
   }
@@ -101,5 +89,60 @@ public class MPAssignment {
   
   static void println(String message) {
     System.out.println(message);
+  }
+  
+  static void winShow(String title , Mat img) {
+    winShow(title, img, 0, 0);
+  }
+  
+  static void winShow(String title , Mat img, int x, int y) {
+    winX = x;
+    winY = y;
+    winW = img.width() + 8; // Offset is for windows 10 border(on my pc at least)
+    winH = img.height() + 34;
+    
+    HighGui.imshow(title, img);
+    HighGui.moveWindow(title, x, y);
+  }
+  
+  static void winShowRight(String title , Mat img) {
+    winX = winX + winW;
+    winW = img.width() + 8; // Offset is for windows 10 border(on my pc at least)
+    winH = img.height() + 34;
+        
+    winShow(title, img, winX, winY);
+  }
+  
+  static void winShowLeft(String title , Mat img) {
+    winX = winX - img.width() - 8;
+    winW = img.width() + 8; // Offset is for windows 10 border(on my pc at least)
+    winH = img.height() + 34;
+
+    winShow(title, img, winX, winY);
+  }
+  
+  static void winShowBelow(String title , Mat img) {
+    winY = winY + winH;
+    winW = img.width() + 8; // Offset is for windows 10 border(on my pc at least)
+    winH = img.height() + 34;
+        
+    winShow(title, img, winX, winY);
+  }
+  
+  static void winShowAbove(String title , Mat img) {
+    winY = winY - img.height() - 34;
+    winW = img.width() + 8; // Offset is for windows 10 border(on my pc at least)
+    winH = img.height() + 34;
+        
+    winShow(title, img, winX, winY);
+  }
+  
+  static void winWait() {
+    winX = 0;
+    winY = 0;
+    winW = 0;
+    winH = 0;
+
+    HighGui.waitKey();
   }
 }

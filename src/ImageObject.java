@@ -7,6 +7,7 @@ import org.opencv.core.CvType;
 import org.opencv.core.Mat;
 import org.opencv.core.MatOfFloat;
 import org.opencv.core.MatOfInt;
+import org.opencv.core.MatOfPoint;
 import org.opencv.core.Point;
 import org.opencv.core.Scalar;
 import org.opencv.core.Size;
@@ -218,6 +219,49 @@ public class ImageObject {
     
     return mainColor;
   }
+  
+  // Should be used with grayscale
+  public Point[] getHarrisCorners() {
+    return getHarrisCorners(3, 1, 0.1, 200);
+  }
+  
+  public Point[] getHarrisCorners(int blockSize, int apertureSize, double k, int threshold) {
+    Mat harrisMat = new Mat();
+    Mat harrisMatNormal = new Mat();
+    
+    ArrayList<Point> corners = new ArrayList<Point>();
+    
+    Imgproc.cornerHarris(_img, harrisMat, blockSize, apertureSize, k);
+    
+    Core.normalize(harrisMat, harrisMatNormal, 0, 255, Core.NORM_MINMAX, CvType.CV_32F, new Mat());
+    //Core.convertScaleAbs(harrisMatNormal, harrisMatNormalScaled);
+    
+    for( int row = 0; row < harrisMatNormal.rows() ; row++){
+      for( int col = 0; col < harrisMatNormal.cols(); col++){
+        int angle = (int) harrisMatNormal.get(row, col)[0]; // I think its angle
+        
+        if (angle > threshold){
+          corners.add(new Point(row, col));
+        }
+      }
+    }
+    
+    return (Point[])corners.toArray();
+  }
+  
+  //Should be used with grayscale
+  public Point[] getShiTomasiCorners() {
+    return getShiTomasiCorners(0, 0.01, 10);
+  }
+  
+  //https://github.com/opencv/opencv/blob/master/samples/java/tutorial_code/TrackingMotion/good_features_to_track/GoodFeaturesToTrackDemo.java
+  public Point[] getShiTomasiCorners(int maxCorners, double quality, double minDist) {
+    MatOfPoint corners = new MatOfPoint();
+    
+    Imgproc.goodFeaturesToTrack(_img, corners, maxCorners, quality, minDist);
+    
+    return corners.toArray();
+  }
 
   // Destructive Modifications, They WILL change the _img
   public ImageObject convert(int convertType) {
@@ -266,69 +310,7 @@ public class ImageObject {
     Imgproc.equalizeHist(_img, _img);
     return this;
   }
-  
-  public ImageObject filterGaussian() {
-    Mat kernel = Utils.matPut(5, 5, CvType.CV_32F, new int[][]{
-      {1, 4, 7, 4,1},
-      {4,16,26,16,4},
-      {7,26,41,26,7},
-      {4,16,26,16,4},
-      {1, 4, 7, 4,1}});
-    
-    // [Q]What is the 1/273?
-    
-    Imgproc.filter2D(_img, _img, -1, kernel);
 
-    return this;
-  }
-  
-  public ImageObject filterLaplacian() {
-    Mat kernel = Utils.matPut(3, 3, CvType.CV_32F, new int[][]{
-      {0, 1,0},
-      {1,-4,1},
-      {0, 1,0}});
-    
-    // [Q]What is the 1/273?
-    
-    Imgproc.filter2D(_img, _img, -1, kernel);
-
-    return this;
-  }
-
-  public ImageObject filterPrewit() {
-    Mat kernel = Utils.matPut(3, 3, CvType.CV_32F, new int[][]{
-      {-1,0,1},
-      {-1,0,1},
-      {-1,0,1}});
-    
-    Imgproc.filter2D(_img, _img, -1, kernel);
-
-    kernel = Utils.matPut(3, 3, CvType.CV_32F, new int[][]{
-      {-1,-1,-1},
-      { 0, 0, 0},
-      { 1, 1, 1}});
-    
-    Imgproc.filter2D(_img, _img, -1, kernel);
-    return this;
-  }
-  
-  public ImageObject filterSobel() {
-    Mat kernel = Utils.matPut(3, 3, CvType.CV_32F, new int[][]{
-      {-1,0,1},
-      {-2,0,2},
-      {-1,0,1}});
-    
-    Imgproc.filter2D(_img, _img, -1, kernel);
-
-    kernel = Utils.matPut(3, 3, CvType.CV_32F, new int[][]{
-      {-1,-2,-1},
-      { 0, 0, 0},
-      { 1, 2, 1}});
-    
-    Imgproc.filter2D(_img, _img, -1, kernel);
-    return this;
-  }
-  
   public ImageObject morphDilate(int elementSize) {
     Mat element = Imgproc.getStructuringElement(Imgproc.MORPH_RECT, new  Size(2*elementSize + 1, 2*elementSize+1));
     Imgproc.morphologyEx(_img, _img, Imgproc.MORPH_DILATE, element);

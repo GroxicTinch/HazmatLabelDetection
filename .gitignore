@@ -27,3 +27,5 @@ SampleData/
 *.dll
 .classpath
 .project
+.externalToolBuilders
+/bin/

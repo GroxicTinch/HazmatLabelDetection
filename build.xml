@@ -1,0 +1,44 @@
+<?xml version="1.0" encoding="UTF-8" standalone="no"?>
+<!-- WARNING: Eclipse auto-generated file.
+              Any modifications will be overwritten.
+              To include a user specific buildfile here, simply create one in the same
+              directory with the processing instruction <?eclipse.ant.import?>
+              as the first entry and export the buildfile again. --><project basedir="." default="build" name="HazmatLabelDetection">
+    <property environment="env"/>
+    <property name="debuglevel" value="source,lines,vars"/>
+    <property name="target" value="1.7"/>
+    <property name="source" value="1.7"/>
+
+    <property name="src.dir" value="src"/>
+    <property name="classes.dir" value="bin"/>
+    	
+    <path id="OpenCV.userclasspath">
+        <pathelement location="lib/opencv-342.jar"/>
+    </path>
+    <path id="HazmatLabelDetection.classpath">
+        <pathelement location="."/>
+        <path refid="OpenCV.userclasspath"/>
+    </path>
+              	
+    <target name="clean">
+        <delete>
+            <fileset dir="." includes="**/*.class"/>
+        </delete>
+    </target>
+
+    <target name="build" depends="compile"></target>
+              	
+  	<target name="compile">
+  		<mkdir dir="${classes.dir}"/>
+      <javac includeantruntime="false" srcdir="${src.dir}" destdir="${classes.dir}" classpathref="HazmatLabelDetection.classpath"/>
+    </target>
+
+    <target name="jar" depends="compile">
+      <jar destfile="${ant.project.name}.jar" basedir="${classes.dir}">
+        <manifest>
+          <attribute name="Main-Class" value="MPAssignment"/>
+        	<attribute name="Class-Path" value="${OpenCV.userclasspath}"/>
+        </manifest>
+      </jar>
+  	</target>
+</project>
