@@ -4,6 +4,7 @@ import java.util.ArrayList;
 import java.util.List;
 
 import org.opencv.core.Core;
+import org.opencv.core.Core.MinMaxLocResult;
 import org.opencv.core.CvType;
 import org.opencv.core.Mat;
 import org.opencv.core.MatOfPoint;
@@ -64,6 +65,9 @@ public class MPAssignment {
       println("Please run with a path to a directory of images as an argument or a path to an image");
     }
   }
+  
+  /* [Q] Prac4 Ex 2 says to implement a CCL, but OpenCV already has this as a function?
+   */
 
   static void processFile(File file) throws IOException {
     ImageFileObject origImgFO = new ImageFileObject(file);
@@ -71,32 +75,68 @@ public class MPAssignment {
 
     if(imgFO.isImage()) {
       winShow(origImgFO.getFilename(), origImgFO.getImg());
-      
-      Mat filtered = new Mat();
-      Mat out = imgFO.copy().getImg();
-      filtered = Filter.prewitt(imgFO.convert(Imgproc.COLOR_BGR2GRAY).getImg());
-      
-      MSER mser = MSER.create(15, 60, 10000, 0.25, 1, 1000, 1, 1, 1);
-      
-      List<MatOfPoint> msers = new ArrayList<MatOfPoint>();
-      MatOfRect bboxes = new MatOfRect();
-      
-      mser.detectRegions(filtered, msers, bboxes);
-            
-      //Imgproc.Canny(filtered, filtered, 900, 1000);
-      
-      for(MatOfPoint blob : msers) {
-        Rect rect = Imgproc.boundingRect(blob);
-        // draw enclosing rectangle (all same color, but you could use variable i to make them unique)
-        Imgproc.rectangle(out, new Point(rect.x, rect.y), new Point(rect.x + rect.width, rect.y + rect.height), new Scalar(0,0,255), 2);
-      }
 
-      winShowRight("Prewitt "+ imgFO.getFilename(), out);
+      Mat out = Filter.threshold(imgFO.convert(Imgproc.COLOR_BGR2GRAY).getImg(), 80);
+      Mat groups = new Mat();
+      ArrayList<Blob> blobs = new ArrayList<Blob>();
+
+      Imgproc.connectedComponents(out, groups);
+      
+      MinMaxLocResult minMaxLoc = Core.minMaxLoc(groups);
+      
+      for(int i = 1; i < minMaxLoc.maxVal; i++) {
+        Mat blobMat = Mat.zeros(groups.size(), CvType.CV_8U);
+        
+        int leftMost = groups.cols() + 1;
+        int rightMost = -1;
+        int topMost = groups.rows() + 1;
+        int bottomMost = -1;
+        
+        int foregroundCount = 0;
+        
+        for(int row = 0; row < groups.rows(); row++) {
+          for(int col = 0; col < groups.cols(); col++) {
+            if(groups.get(row, col)[0] == i) {
+              foregroundCount++;
+              blobMat.put(row, col, 255);
+              if(col < leftMost ) {
+                leftMost = col;
+              }
+              if(col > rightMost) {
+                rightMost = col;
+              }
+              
+              if(row < topMost) {
+                topMost = row;
+              }
+              if(row > bottomMost) {
+                bottomMost = row;
+              }
+            }
+          }
+        }
+        
+        blobMat = blobMat.submat(topMost, bottomMost+1, leftMost, rightMost+1);
+        
+        if(blobMat.height() > 5 && blobMat.width() > 5) {
+          double ratio = (double)foregroundCount / (double)(blobMat.width() * blobMat.height());
+          Blob blob = new Blob(blobMat, blobMat.width(), blobMat.height(), ratio);
+          
+          println(blobMat.dump());
+          println("width: " + blobMat.width()
+               +"\nheight: " + blobMat.height()
+               +"\nratio: " + ratio
+               +"\n");
+          
+          Imgproc.cvtColor(blobMat, blobMat,  Imgproc.COLOR_GRAY2BGR);
+          winShowRight("blob "+ i, blobMat);
+        
+          blobs.add(blob);
+        }
+      }
+      
+      winShowRight("Out "+ imgFO.getFilename(), out);
       winWait();
-            
-      /*ImageFileObject newImgFO = imgFO.copy();
-      HighGui.imshow("Filtered" + newImgFO.getFilename(), newImgFO.filterGaussian().getImg());
-      HighGui.waitKey();*/
     }
   }
   

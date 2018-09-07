@@ -1,10 +1,17 @@
+import java.util.ArrayList;
+
 import org.opencv.core.Core;
 import org.opencv.core.CvType;
 import org.opencv.core.Mat;
+import org.opencv.core.Scalar;
 import org.opencv.imgproc.Imgproc;
 
 public class Filter {
   public static Mat gaussian(Mat img) {
+    return gaussian(img, 1);
+  }
+  
+  public static Mat gaussian(Mat img, double multi) {
     Mat outputMat = new Mat();
     
     Mat kernel = Utils.matPut(5, 5, CvType.CV_32F, new int[][]{
@@ -14,7 +21,7 @@ public class Filter {
       {4,16,26,16,4},
       {1, 4, 7, 4,1}});
     
-    // [Q]What is the 1/273?
+    Core.divide(kernel, new Scalar(273), kernel);
     
     Imgproc.filter2D(img, outputMat, -1, kernel);
 
@@ -63,8 +70,6 @@ public class Filter {
       {0, 1,0},
       {1,-4,1},
       {0, 1,0}});
-    
-    // [Q]What is the 1/273?
     
     Imgproc.filter2D(img, outputMat, -1, kernel);
 
@@ -160,6 +165,14 @@ public class Filter {
   
     Core.add(corrMat, convMat, outputMat);
 
+    return outputMat;
+  }
+  
+  public static Mat threshold(Mat img, double thresh) {
+    Mat outputMat = new Mat();
+    
+    Imgproc.threshold(img, outputMat, thresh, 255, 1);
+    
     return outputMat;
   }
 }
