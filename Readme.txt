@@ -1,5 +1,5 @@
 Build:
-  javac src\*.java -d . -cp lib\opencv-342.jar
+  javac src\*.java -d .\classes -cp .\lib\*.jar
 
 Run:
-  java ??????????
+  java -cp ".\classes;.\lib\*.jar" MPAssignment "SampleData/Prac2"
