@@ -1,8 +1,12 @@
+import java.util.ArrayList;
 import java.util.HashSet;
+import java.util.List;
 
 import org.opencv.core.CvType;
 import org.opencv.core.Mat;
+import org.opencv.core.MatOfPoint;
 import org.opencv.core.Point;
+import org.opencv.imgproc.Imgproc;
 
 public class ConnectedComponentsBlob {
   private HashSet<Point> _pixelList;
@@ -12,12 +16,17 @@ public class ConnectedComponentsBlob {
   private int _y2;
   
   private Mat _mat;
+  private int _matWidth;
+  private int _matHeight;
   
   private boolean generateMat;
   
-  public ConnectedComponentsBlob() {
+  public ConnectedComponentsBlob(Mat img) {
     _pixelList = new HashSet<Point>();
     generateMat = true;
+    
+    _matWidth = img.cols();
+    _matHeight = img.rows();
     
     _x = -1;
     _y = -1;
@@ -34,28 +43,69 @@ public class ConnectedComponentsBlob {
   }
   
   public int getWidth() {
-    return (_x2 - _x);
+    return (_x2 - _x) + 1;
   }
 
   public int getHeight() {
-    return (_y2 - _y);
+    return (_y2 - _y) + 1;
+  }
+  
+  public int getWidthFull() {
+    return _matWidth;
+  }
+
+  public int getHeightFull() {
+    return _matHeight;
   }
   
   public Mat getMat() {
+    return getMatFull().submat(_y, _y2+1, _x, _x2+1);
+  }
+  
+  public Mat getMatFull() {
     if(generateMat) {
-      _mat = Mat.zeros(getHeight()+1, getWidth()+1, CvType.CV_8U);
+      _mat = Mat.zeros(_matHeight, _matWidth, CvType.CV_8U);
       
       for(Point p : _pixelList) {
-        int newY = (int)p.y - _y;
-        int newX = (int)p.x - _x;
-        
-        _mat.put(newY, newX, 255);
+        _mat.put((int)p.y, (int)p.x, 255);
       }
       
       generateMat = false;
     }
     
     return _mat;
+  }
+  
+  public ArrayList<MatOfPoint> findApproxContours() {
+    return findContours(Imgproc.CHAIN_APPROX_SIMPLE);
+  }
+  
+  public ArrayList<MatOfPoint> findAbsContours() {
+    return findContours(Imgproc.CHAIN_APPROX_NONE);
+  }
+  
+  public ArrayList<MatOfPoint> findContours(int method) {
+    ArrayList<MatOfPoint> contours = new ArrayList<MatOfPoint>();
+    
+    Imgproc.findContours(getMat(), contours, new Mat(), Imgproc.RETR_EXTERNAL, method);
+    
+    return contours;
+  }
+  
+  public ArrayList<MatOfPoint> findApproxContoursFull() {
+    return findContoursFull(Imgproc.CHAIN_APPROX_SIMPLE);
+  }
+  
+  public ArrayList<MatOfPoint> findAbsContoursFull() {
+    return findContoursFull(Imgproc.CHAIN_APPROX_NONE);
+  }
+  
+  public ArrayList<MatOfPoint> findContoursFull(int method) {
+    ArrayList<MatOfPoint> contours = new ArrayList<MatOfPoint>();
+    
+    Imgproc.findContours(getMatFull(), contours, new Mat(), Imgproc.RETR_EXTERNAL, method);
+    
+    return contours;
   }
   
   public HashSet<Point> getPixels() {

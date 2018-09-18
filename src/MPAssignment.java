@@ -1,22 +1,13 @@
 import java.io.File;
 import java.io.IOException;
 import java.util.ArrayList;
-import java.util.List;
 
 import org.opencv.core.Core;
 import org.opencv.core.Core.MinMaxLocResult;
 import org.opencv.core.CvType;
 import org.opencv.core.Mat;
-import org.opencv.core.MatOfPoint;
-import org.opencv.core.MatOfPoint2f;
-import org.opencv.core.MatOfRect;
-import org.opencv.core.Point;
-import org.opencv.core.Rect;
 import org.opencv.core.Scalar;
-import org.opencv.core.Size;
-import org.opencv.features2d.MSER;
 import org.opencv.highgui.HighGui;
-import org.opencv.imgcodecs.Imgcodecs;
 import org.opencv.imgproc.Imgproc;
 
 /**
@@ -99,7 +90,7 @@ public class MPAssignment {
        */
       
       Mat blobMat;
-      Mat out = Filter.threshold(imgFO.convert(Imgproc.COLOR_BGR2GRAY).getImg(), 80);
+      Mat out = Filter.threshold(imgFO.copy().convert(Imgproc.COLOR_BGR2GRAY).getImg(), 80);
       
       ConnectedComponents connComp = new ConnectedComponents(out);
       blobMat = connComp.generate();
@@ -107,8 +98,10 @@ public class MPAssignment {
       ConnectedComponentsBlob[] connBlob = connComp.getBlobs();
       
       for(int i = 0; i < connBlob.length; i++) {
-        winShowRight("Blob " + i + " " + imgFO.getFilename(), connBlob[i].getMat());
+        Imgproc.drawContours(imgFO.getImg(), connBlob[i].findAbsContoursFull(), 0, new Scalar(0,0,255));
       }
+      
+      winShowRight("Blob " + imgFO.getFilename(), imgFO.getImg());
       
       winWait();
       

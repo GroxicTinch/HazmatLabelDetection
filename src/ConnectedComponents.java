@@ -21,7 +21,7 @@ public class ConnectedComponents {
   }
   
   private void addPixel(Point pos, int label) {
-    ConnectedComponentsBlob posSet = _connList.getOrDefault(label, new ConnectedComponentsBlob());
+    ConnectedComponentsBlob posSet = _connList.getOrDefault(label, new ConnectedComponentsBlob(_img));
     
     posSet.add(pos);
     
@@ -45,8 +45,8 @@ public class ConnectedComponents {
     int smallestLabel;
     int largerLabel;
     
-    ConnectedComponentsBlob currPosSet = _connList.getOrDefault(currLabel, new ConnectedComponentsBlob());
-    ConnectedComponentsBlob foundPosSet = _connList.getOrDefault(foundLabel, new ConnectedComponentsBlob());
+    ConnectedComponentsBlob currPosSet = _connList.getOrDefault(currLabel, new ConnectedComponentsBlob(_img));
+    ConnectedComponentsBlob foundPosSet = _connList.getOrDefault(foundLabel, new ConnectedComponentsBlob(_img));
     
     if(foundLabel < currLabel) {
       smallestLabel = foundLabel;
