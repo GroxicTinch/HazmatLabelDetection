@@ -84,10 +84,12 @@ public class MPAssignment {
        */
       
       // Use this when testing so I dont need to remove or add things
-      /* 
-      PRACWORK(file, imgFO, origImgFO);
-      return;
-       */
+      
+      if(true) {
+        PRACWORK(file, imgFO, origImgFO);
+        return;
+      }
+      
       
       Mat blobMat;
       Mat out = Filter.threshold(imgFO.copy().convert(Imgproc.COLOR_BGR2GRAY).getImg(), 80);
@@ -111,66 +113,7 @@ public class MPAssignment {
   
   @SuppressWarnings("unused")
   private static void PRACWORK(File file, ImageFileObject imgFO, ImageFileObject origImgFO) {
-    winShow(origImgFO.getFilename(), origImgFO.getImg());
-
-    Mat out = Filter.threshold(imgFO.convert(Imgproc.COLOR_BGR2GRAY).getImg(), 80);
-    Mat groups = new Mat();
-    ArrayList<Blob> blobs = new ArrayList<Blob>();
-
-    Imgproc.connectedComponents(out, groups);
     
-    MinMaxLocResult minMaxLoc = Core.minMaxLoc(groups);
-    
-    for(int i = 1; i < minMaxLoc.maxVal; i++) {
-      Mat blobMat = Mat.zeros(groups.size(), CvType.CV_8U);
-      
-      int leftMost = groups.cols() + 1;
-      int rightMost = -1;
-      int topMost = groups.rows() + 1;
-      int bottomMost = -1;
-      
-      int foregroundCount = 0;
-      
-      for(int row = 0; row < groups.rows(); row++) {
-        for(int col = 0; col < groups.cols(); col++) {
-          if(groups.get(row, col)[0] == i) {
-            foregroundCount++;
-            blobMat.put(row, col, 255);
-            if(col < leftMost ) {
-              leftMost = col;
-            }
-            if(col > rightMost) {
-              rightMost = col;
-            }
-            
-            if(row < topMost) {
-              topMost = row;
-            }
-            if(row > bottomMost) {
-              bottomMost = row;
-            }
-          }
-        }
-      }
-      
-      blobMat = blobMat.submat(topMost, bottomMost+1, leftMost, rightMost+1);
-      
-      if(blobMat.height() > 5 && blobMat.width() > 5) {
-        double ratio = (double)foregroundCount / (double)(blobMat.width() * blobMat.height());
-        Blob blob = new Blob(blobMat, blobMat.width(), blobMat.height(), ratio);
-        
-        println(blobMat.dump());
-        println("width: " + blobMat.width()
-             +"\nheight: " + blobMat.height()
-             +"\nratio: " + ratio
-             +"\n");
-        
-        Imgproc.cvtColor(blobMat, blobMat,  Imgproc.COLOR_GRAY2BGR);
-        winShowRight("blob "+ i, blobMat);
-      
-        blobs.add(blob);
-      }
-    }
     
     winShowRight("Out "+ imgFO.getFilename(), out);
     winWait();
