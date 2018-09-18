@@ -15,6 +15,7 @@ hs_err_pid*
 
 # Sample Test data https://lms.curtin.edu.au/bbcswebdav/pid-6116951-dt-content-rid-31780287_1/xid-31780287_1
 SampleData/
+!*.folder
 *.dll
 .classpath
 .project
