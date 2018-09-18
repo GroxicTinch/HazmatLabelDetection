@@ -28,19 +28,19 @@ public class ImageFileObject extends ImageObject {
       _fileExt = _filename.substring(dotIndex+1);
 
       switch(_fileExt) {
-        case "bmp":
-        case "jp2":
-        case "jpe":
-        case "jpeg":
+        //case "bmp":
+        //case "jp2":
+        //case "jpe":
+        //case "jpeg":
         case "jpg":
-        case "pbm":
-        case "pgm":
+        //case "pbm":
+        //case "pgm":
         case "png":
-        case "ppm":
-        case "ras":
-        case "sr":
-        case "tiff":
-        case "tif":
+        //case "ppm":
+        //case "ras":
+        //case "sr":
+        //case "tiff":
+        //case "tif":
           _isImage = true;
           break;
         default:
