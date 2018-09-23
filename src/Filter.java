@@ -3,10 +3,21 @@ import java.util.ArrayList;
 import org.opencv.core.Core;
 import org.opencv.core.CvType;
 import org.opencv.core.Mat;
+import org.opencv.core.MatOfInt;
 import org.opencv.core.Scalar;
 import org.opencv.imgproc.Imgproc;
 
 public class Filter {
+  public static Mat borderConstant(Mat img, int value) {
+    return borderConstant(img, 1, value);
+  }
+  
+  public static Mat borderConstant(Mat img, int thickness, int value) {
+    // src, dst, top, btm, left, right, type
+    Core.copyMakeBorder(img, img, thickness, thickness, thickness, thickness, Core.BORDER_CONSTANT, new Scalar(value));
+    return img;
+  }
+  
   public static Mat gaussian(Mat img) {
     return gaussian(img, 1);
   }
@@ -171,7 +182,15 @@ public class Filter {
   public static Mat threshold(Mat img, double thresh) {
     Mat outputMat = new Mat();
     
-    Imgproc.threshold(img, outputMat, thresh, 255, 1);
+    Imgproc.threshold(img, outputMat, thresh, 255, Imgproc.THRESH_OTSU);
+    
+    return outputMat;
+  }
+  
+  public static Mat thresholdInv(Mat img, double thresh) {
+    Mat outputMat = new Mat();
+    
+    Imgproc.threshold(img, outputMat, thresh, 255, Imgproc.THRESH_OTSU + Imgproc.THRESH_BINARY_INV);
     
     return outputMat;
   }

@@ -124,8 +124,9 @@ public class ConnectedComponents {
           // Top row
           if(row > 0) {
             int leftMostCol = (col == 0) ? 0 : -1;  // if on first col then don't check col-1 for connected
+            int rightMostCol = (col == _img.cols()-1) ? 0 : 1;
             
-            for(int conCol = leftMostCol; conCol <= 1; conCol++) {
+            for(int conCol = leftMostCol; conCol <= rightMostCol; conCol++) {
               foundLabel = (int) _blobMat.get(row-1, col + conCol)[0];
               
               if(foundLabel > 0 && foundLabel != currLabel) {
