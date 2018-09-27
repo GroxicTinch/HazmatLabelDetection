@@ -21,6 +21,7 @@ public class ConnectedComponentsBlob {
   private int _matHeight;
   
   private boolean generateMat;
+  //[TODO] Blob Boundry Extraction
   
   public ConnectedComponentsBlob(Mat img) {
     _pixelList = new HashSet<Point>();
@@ -76,6 +77,10 @@ public class ConnectedComponentsBlob {
     }
     
     return _mat;
+  }
+  
+  public int getPerimeter() {
+    return (_matWidth + _matHeight) * 2;
   }
   
   public HashSet<Point> getPixels() {

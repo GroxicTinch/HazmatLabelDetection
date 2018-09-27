@@ -4,6 +4,9 @@ import java.io.ByteArrayInputStream;
 import java.io.File;
 import java.io.IOException;
 import java.io.InputStream;
+import java.util.ArrayList;
+import java.util.Scanner;
+
 import javax.imageio.ImageIO;
 import javax.swing.ImageIcon;
 import javax.swing.JFrame;
@@ -14,6 +17,7 @@ import org.opencv.core.CvType;
 import org.opencv.core.Mat;
 import org.opencv.core.MatOfByte;
 import org.opencv.core.MatOfKeyPoint;
+import org.opencv.core.Point;
 import org.opencv.core.Scalar;
 import org.opencv.core.Size;
 import org.opencv.features2d.FeatureDetector;
@@ -26,11 +30,13 @@ import org.opencv.imgproc.Imgproc;
  * @author David
  */
 public class MPAssignment {
-
-  static int winX = 0;
-  static int winY = 0;
-  static int winW = 0;
-  static int winH = 0;
+  static int _winX = 0;
+  static int _winY = 0;
+  static int _winW = 0;
+  static int _winH = 0;
+  
+  static ArrayList<JFrame> _frameList = new ArrayList<JFrame>();
+  
   /**
   * @param args the command line arguments
   */
@@ -77,8 +83,15 @@ public class MPAssignment {
     ImageFileObject origImgFO = new ImageFileObject(file);
 
     if(origImgFO.isImage()) {
+      String topColor = "Not Implemented";
+      String bottomColor = "Not Implemented";
+      String classNum = "Not Implemented";
+      String otherText = "Not Implemented";
+      String symbol = "Not Implemented";
+      
+      
       ImageFileObject imgFO = origImgFO.copy();
-      winShow(origImgFO.getFilename(), origImgFO.getImg());
+      winShow(origImgFO.getFilename(), origImgFO.getMat());
       
       /* 
        * [TODO] Ensure files are read alphabetically
@@ -94,6 +107,12 @@ public class MPAssignment {
        * [Ignore] Labels with multiple class numbers or with non-numeric chars
        */
       
+      /* Subtasks needing to be fixed
+       * [TODO] Blob Boundry Extraction
+       * [TODO] Blob Chords
+       * [TODO] Prac4 Ex3 Histogram Feature Extraction
+       */
+      
       // Use this when testing so I dont need to remove or add things
       
       if(true) {
@@ -103,7 +122,7 @@ public class MPAssignment {
       
       
       Mat blobMat;
-      Mat out = Filter.threshold(imgFO.copy().convert(Imgproc.COLOR_BGR2GRAY).getImg(), 80);
+      Mat out = Filter.thresholdInv(imgFO.copy().convert(Imgproc.COLOR_BGR2GRAY).getMat(), 80);
       
       ConnectedComponents connComp = new ConnectedComponents(out);
       blobMat = connComp.generate();
@@ -111,14 +130,32 @@ public class MPAssignment {
       ConnectedComponentsBlob[] connBlob = connComp.getBlobs();
       
       for(int i = 0; i < connBlob.length; i++) {
-        Imgproc.drawContours(imgFO.getImg(), connBlob[i].findAbsContoursFull(), 0, new Scalar(0,0,255));
+        Imgproc.drawContours(imgFO.getMat(), connBlob[i].findAbsContoursFull(), 0, new Scalar(0,0,255));
       }
       
-      winShowRight("Blob " + imgFO.getFilename(), imgFO.getImg());
+      winShowRight("Blob " + imgFO.getFilename(), imgFO.getMat());
       
+      /* Get Colours */
+      // [TODO] Create proper way to create masks
+      Mat topMask = Imgcodecs.imread("./SampleData/Mask/MaskTopTemp.png");
+      Imgproc.cvtColor(topMask, topMask, Imgproc.COLOR_BGR2GRAY);
+      Mat bottomMask = Imgcodecs.imread("./SampleData/Mask/MaskBottomTemp.png");
+      Imgproc.cvtColor(bottomMask, bottomMask, Imgproc.COLOR_BGR2GRAY);
+      int newHeight = imgFO.getHeight() / 2;
+      
+      Mat topHalf = imgFO.copy().crop(new Point(0,0), imgFO.getWidth(), newHeight).getMat();
+      Mat bottomHalf = imgFO.copy().crop(new Point(0, newHeight), imgFO.getWidth(), newHeight).getMat();
+      
+      topColor = MatInfo.getMainColor(topHalf, topMask);
+      bottomColor = MatInfo.getMainColor(bottomHalf, bottomMask);
+      
+      System.out.println("\nTop: " + topColor
+                     + "\nBottom: " + bottomColor
+                     + "\nClass: " + classNum
+                     + "\nText: " + otherText
+                     + "\nSymbol: " + symbol);
+
       winWait();
-      
-      //winWait();
     }
   }
   
@@ -126,33 +163,11 @@ public class MPAssignment {
   private static void PRACWORK(File file, ImageFileObject imgFO, ImageFileObject origImgFO) {
     Mat out = new Mat();
     
-    /*FeatureDetector fd = FeatureDetector.create(FeatureDetector.FAST);
-    MatOfKeyPoint regions = new MatOfKeyPoint();
-    
-    fd.detect(imgFO.getImg(), regions);
-    
-    Features2d.drawKeypoints(imgFO.getImg(), regions, out);*/
-    
-    out = Filter.thresholdInv(imgFO.copy().convert(Imgproc.COLOR_BGR2GRAY).getImg(), 80);
+    out = HOG.create(imgFO.getMat());
     println(out.dump());
-    ConnectedComponents connComp = new ConnectedComponents(out);
-    connComp.generate();
-    //println(blobMat.dump());
-    ConnectedComponentsBlob[] connBlob = connComp.getBlobs();
     
-    for(int i = 0; i < connBlob.length; i++) {
-      Mat tmp = Mat.zeros(connBlob[i].getMat().size(), CvType.CV_8U);
-      Imgproc.drawContours(tmp, connBlob[i].findAbsContours(), 0, new Scalar(255));
-
-      //Imgproc.resize(connBlob[i].getMat(), out, new Size(15, 30));
-      
-      println(connBlob[i].getMat().dump() + "\n"
-            + "ratio: " + connBlob[i].ratio() + "\n"
-            + "");
-      
-      winShowRight("tmp "+ imgFO.getFilename(), connBlob[i].getMat());
-    }
-    //winWait();
+    //winShowRight("tmp "+ imgFO.getFilename(), out);
+    winWait();
   }
 
   // Current progress
@@ -169,10 +184,10 @@ public class MPAssignment {
   }
   
   static JFrame winShow(String title , Mat img, int x, int y) {  
-    winX = x;
-    winY = y;
-    winW = img.width() + 8; // Offset is for windows 10 border(on my pc at least)
-    winH = img.height() + 34;
+    _winX = x;
+    _winY = y;
+    _winW = img.width() + 8; // Offset is for windows 10 border(on my pc at least)
+    _winH = img.height() + 34;
     
     /* HighGui calls with third party code since downgrading OpenCV removed gui functionality
     HighGui.imshow(title, img);
@@ -183,43 +198,49 @@ public class MPAssignment {
   }
   
   static JFrame winShowRight(String title , Mat img) {
-    winX = winX + winW;
-    winW = img.width() + 8; // Offset is for windows 10 border(on my pc at least)
-    winH = img.height() + 34;
+    _winX = _winX + _winW;
+    _winW = img.width() + 8; // Offset is for windows 10 border(on my pc at least)
+    _winH = img.height() + 34;
         
-    return winShow(title, img, winX, winY);
+    return winShow(title, img, _winX, _winY);
   }
   
   static JFrame winShowLeft(String title , Mat img) {
-    winX = winX - img.width() - 8;
-    winW = img.width() + 8; // Offset is for windows 10 border(on my pc at least)
-    winH = img.height() + 34;
+    _winX = _winX - img.width() - 8;
+    _winW = img.width() + 8; // Offset is for windows 10 border(on my pc at least)
+    _winH = img.height() + 34;
 
-    return winShow(title, img, winX, winY);
+    return winShow(title, img, _winX, _winY);
   }
   
   static JFrame winShowBelow(String title , Mat img) {
-    winY = winY + winH;
-    winW = img.width() + 8; // Offset is for windows 10 border(on my pc at least)
-    winH = img.height() + 34;
+    _winY = _winY + _winH;
+    _winW = img.width() + 8; // Offset is for windows 10 border(on my pc at least)
+    _winH = img.height() + 34;
         
-    return winShow(title, img, winX, winY);
+    return winShow(title, img, _winX, _winY);
   }
   
   static JFrame winShowAbove(String title , Mat img) {
-    winY = winY - img.height() - 34;
-    winW = img.width() + 8; // Offset is for windows 10 border(on my pc at least)
-    winH = img.height() + 34;
+    _winY = _winY - img.height() - 34;
+    _winW = img.width() + 8; // Offset is for windows 10 border(on my pc at least)
+    _winH = img.height() + 34;
         
-    return winShow(title, img, winX, winY);
+    return winShow(title, img, _winX, _winY);
   }
   
   static void winWait() {
-    winX = 0;
-    winY = 0;
-    winW = 0;
-    winH = 0;
-
+    _winX = 0;
+    _winY = 0;
+    _winW = 0;
+    _winH = 0;
+    
+    Scanner input = new Scanner(System.in);
+    input.nextLine();
+    
+    for(JFrame frame : _frameList) {
+      frame.dispose();
+    }
     /* HighGui calls with third party code since downgrading OpenCV removed gui functionality
     HighGui.waitKey();
     */
@@ -241,6 +262,8 @@ public class MPAssignment {
         frame.pack();
         frame.setVisible(true);
         frame.setDefaultCloseOperation(JFrame.EXIT_ON_CLOSE);
+        
+        _frameList.add(frame);
         
         return frame;
     } catch (Exception e) {

@@ -26,10 +26,12 @@ public class Utils {
     return var;
   }
   
-  public static Mat matPut(int width, int height, int type, int[][] matData) {
-    Mat matrix = new Mat(width,height, type);
-  
+  public static Mat matPut(int type, int[][] matData) {
+    int width = matData[0].length;
+    int height = matData.length;
     
+    Mat matrix = new Mat(height, width, type);
+  
     for(int col = 0; col < width; col++) {
       for(int row = 0; row < height; row++) {
         matrix.put(row, col, matData[row][col]);

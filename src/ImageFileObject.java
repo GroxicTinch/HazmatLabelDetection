@@ -80,13 +80,13 @@ public class ImageFileObject extends ImageObject {
   // toString
   public String toString() {
     return "\nFilename: " + _filename
-          + "\nwidth: " + this.getImg().width()
-          + "\nheight: " + this.getImg().height();
+          + "\nwidth: " + this.getMat().width()
+          + "\nheight: " + this.getMat().height();
   }
   
   public ImageFileObject copy() {
     Mat copyMat = new Mat();
-    getImg().copyTo(copyMat);
+    getMat().copyTo(copyMat);
     
     ImageFileObject copy = new ImageFileObject(copyMat, _name, _filename, _fullPath, _fileExt, _isImage);
     copy.setBounds(this.getBoundsCopy());

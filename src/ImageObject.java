@@ -15,20 +15,20 @@ import org.opencv.imgcodecs.Imgcodecs;
 import org.opencv.imgproc.Imgproc;
 
 public class ImageObject {
-  private Mat _img;
+  private Mat _mat;
   private Bounds _bounds;
 
   // Constructors
   public ImageObject(Mat img) {
-    _img = img;
-    _bounds = new Bounds(0, 0, _img.width(), _img.height());
+    _mat = img;
+    _bounds = new Bounds(0, 0, _mat.width(), _mat.height());
   }
 
   // Getters
-  public Mat getImg() { return _img; }
+  public Mat getMat() { return _mat; }
 
-  public int getWidth() { return _img.width(); }
-  public int getHeight() { return _img.height(); }
+  public int getWidth() { return _mat.width(); }
+  public int getHeight() { return _mat.height(); }
   
   public Bounds getBoundsCopy() { return _bounds.copy(); }
 
@@ -57,7 +57,7 @@ public class ImageObject {
 
     // We need to split the mat into the different colour channels BGR 
     List<Mat> bgr_planes = new ArrayList<Mat>();
-    Core.split(_img, bgr_planes);
+    Core.split(_mat, bgr_planes);
     
     //                Mat array, channel as ints,      mask,  dest,     size, colour range
     Imgproc.calcHist(bgr_planes, new MatOfInt(0), new Mat(), histB, histSize, ranges);
@@ -104,122 +104,6 @@ public class ImageObject {
     return histImageMat;
   }
   
-  public String getMainColor() {
-    Mat mask = new Mat();
-    return getMainColor(mask);
-  }
-  
-  public String getMainColor(Mat mask) {
-    int saturationThreshold = 51; // approx 20%
-    int brightnessThreshold = 76; // approx 30%
-    
-    // Hue goes from 0-180, if we allow 5 for each group it should give us an accurate enough color guess
-    int binsH = 36;
-    int binsSV = 255;
-    
-    String mainColor = "ERROR";
-    Mat hsvImg = new Mat();
-    Mat histH = new Mat();
-    Mat histS = new Mat();
-    Mat histV = new Mat();
-    
-    MatOfInt histSizeH = new MatOfInt(binsH+1);
-    MatOfInt histSizeSV = new MatOfInt(binsSV+1);
-    
-    MatOfFloat rangesH = new MatOfFloat(0,180);
-    MatOfFloat rangesSV = new MatOfFloat(0,256);
-    
-    int maxBinH = -1;
-    double maxH = 0;
-    int maxBinS = -1;
-    double maxS = 0;
-    int maxBinV = -1;
-    double maxV = 0;
-    
-    Imgproc.cvtColor(_img, hsvImg, Imgproc.COLOR_BGR2HSV);
-    
-    // We need to split the mat into the different colour channels BGR 
-    List<Mat> hsv_planes = new ArrayList<Mat>();
-    Core.split(hsvImg, hsv_planes);
-    
-    //[TODO] Create a mask
-    
-    Imgproc.calcHist(hsv_planes, new MatOfInt(0), mask, histH, histSizeH, rangesH);
-    Imgproc.calcHist(hsv_planes, new MatOfInt(1), mask, histS, histSizeSV, rangesSV);
-    Imgproc.calcHist(hsv_planes, new MatOfInt(2), mask, histV, histSizeSV, rangesSV);
-    
-    /*if(!histH.empty()) {
-      return histH.dump();
-    }*/
-    
-    /*if(!histS.empty()) {
-      return histS.dump();
-    }*/
-    
-    /*if(!histV.empty()) {
-      return histV.dump();
-    }*/
-    
-    for(int i = 0; i < binsH; i++) {
-      double countH = histH.get(i, 0)[0];
-            
-      if(countH > maxH) {
-        maxBinH = i;
-        maxH = countH;
-      }
-    }
-    
-    for(int i = 0; i <= 255; i++) {
-      double countS = histS.get(i, 0)[0];
-      double countV = histV.get(i, 0)[0];
-            
-      if(countS > maxS) {
-        maxBinS = i;
-        maxS = countS;
-      }
-      if(countV > maxV) {
-        maxBinV = i;
-        maxV = countV;
-      }
-    }
-    
-    if(maxBinV > brightnessThreshold) {
-      // It is probably not black
-      
-      if(maxBinS > saturationThreshold) {
-        // It is probably a color
-        
-        if(maxBinH <= 1 || maxBinH >= 32) {
-          // H between 0-10 + 175-180
-          mainColor = "Red";
-        } else if(maxBinH >= 2 && maxBinH <= 3) {
-          // H between 10-25
-          mainColor = "Orange" ;
-        } else if(maxBinH >= 4 && maxBinH <= 6) {
-          // H between 25-35
-          mainColor = "Yellow";
-        } else if(maxBinH >= 7 && maxBinH <= 16) {
-          // H between 35-85
-          mainColor = "Green";
-        } else if(maxBinH >= 17 && maxBinH <= 27) {
-          // H between 85-140
-          mainColor = "Blue";
-        } else if(maxBinH >= 28 && maxBinH <= 31) {
-          // H between 140-160
-          mainColor = "Pink"; // This shouldn't happen in the assignment...
-        }
-      } else {
-        // It is probably white
-        mainColor = "White";
-      }
-    } else {
-      // It is probably black
-      mainColor = "Black";
-    }
-    
-    return mainColor;
-  }
-  
   // Should be used with grayscale
   public Point[] getHarrisCorners() {
     return getHarrisCorners(3, 1, 0.1, 200);
@@ -231,7 +115,7 @@ public class ImageObject {
     
     ArrayList<Point> corners = new ArrayList<Point>();
     
-    Imgproc.cornerHarris(_img, harrisMat, blockSize, apertureSize, k);
+    Imgproc.cornerHarris(_mat, harrisMat, blockSize, apertureSize, k);
     
     Core.normalize(harrisMat, harrisMatNormal, 0, 255, Core.NORM_MINMAX, CvType.CV_32F, new Mat());
     //Core.convertScaleAbs(harrisMatNormal, harrisMatNormalScaled);
@@ -258,14 +142,14 @@ public class ImageObject {
   public Point[] getShiTomasiCorners(int maxCorners, double quality, double minDist) {
     MatOfPoint corners = new MatOfPoint();
     
-    Imgproc.goodFeaturesToTrack(_img, corners, maxCorners, quality, minDist);
+    Imgproc.goodFeaturesToTrack(_mat, corners, maxCorners, quality, minDist);
     
     return corners.toArray();
   }
 
   // Destructive Modifications, They WILL change the _img
   public ImageObject convert(int convertType) {
-    Imgproc.cvtColor(_img, _img, convertType);
+    Imgproc.cvtColor(_mat, _mat, convertType);
     return this;
   }
 
@@ -279,12 +163,12 @@ public class ImageObject {
   public ImageObject crop(Point p1, int width, int height) {
     _bounds.setBox(p1.x, p1.y, width, height);
 
-    _img = _img.submat(_bounds.getBoxRect());
+    _mat = _mat.submat(_bounds.getBoxRect());
     return this;
   }
   
   public ImageObject drawBoundingBox(Point p1, Point p2, Scalar color) {
-    Imgproc.rectangle(_img, p1, p2, color, 2);
+    Imgproc.rectangle(_mat, p1, p2, color, 2);
     return this;
   }
   
@@ -294,10 +178,10 @@ public class ImageObject {
   }
   
   public ImageObject drawCornerCircles(Point p1, Point p2, Scalar color) {
-    Imgproc.circle(_img, p1, 5, color, 1);
-    Imgproc.circle(_img, new Point(p2.x, p1.y), 5, color, 1);
-    Imgproc.circle(_img, new Point(p1.x, p2.y), 5, color, 1);
-    Imgproc.circle(_img, p2, 5, color, 1);
+    Imgproc.circle(_mat, p1, 5, color, 1);
+    Imgproc.circle(_mat, new Point(p2.x, p1.y), 5, color, 1);
+    Imgproc.circle(_mat, new Point(p1.x, p2.y), 5, color, 1);
+    Imgproc.circle(_mat, p2, 5, color, 1);
     return this;
   }
   
@@ -307,48 +191,48 @@ public class ImageObject {
   }
   
   public ImageObject equalizeContrast() {
-    Imgproc.equalizeHist(_img, _img);
+    Imgproc.equalizeHist(_mat, _mat);
     return this;
   }
 
   public ImageObject morphDilate(int elementSize) {
     Mat element = Imgproc.getStructuringElement(Imgproc.MORPH_RECT, new  Size(2*elementSize + 1, 2*elementSize+1));
-    Imgproc.morphologyEx(_img, _img, Imgproc.MORPH_DILATE, element);
+    Imgproc.morphologyEx(_mat, _mat, Imgproc.MORPH_DILATE, element);
     
     return this;
   }
   
   public ImageObject morphErode(int elementSize) {
     Mat element = Imgproc.getStructuringElement(Imgproc.MORPH_RECT, new  Size(2*elementSize + 1, 2*elementSize+1));
-    Imgproc.morphologyEx(_img, _img, Imgproc.MORPH_ERODE, element);
+    Imgproc.morphologyEx(_mat, _mat, Imgproc.MORPH_ERODE, element);
     
     return this;
   }
   
   public ImageObject morphOpen(int elementSize) {
     Mat element = Imgproc.getStructuringElement(Imgproc.MORPH_RECT, new  Size(2*elementSize + 1, 2*elementSize+1));
-    Imgproc.morphologyEx(_img, _img, Imgproc.MORPH_OPEN, element);
+    Imgproc.morphologyEx(_mat, _mat, Imgproc.MORPH_OPEN, element);
     
     return this;
   }
   
   public ImageObject morphClose(int elementSize) {
     Mat element = Imgproc.getStructuringElement(Imgproc.MORPH_RECT, new  Size(2*elementSize + 1, 2*elementSize+1));
-    Imgproc.morphologyEx(_img, _img, Imgproc.MORPH_CLOSE, element);
+    Imgproc.morphologyEx(_mat, _mat, Imgproc.MORPH_CLOSE, element);
        
     return this;
   }
   
   public ImageObject morphGradient(int elementSize) {
     Mat element = Imgproc.getStructuringElement(Imgproc.MORPH_RECT, new  Size(2*elementSize + 1, 2*elementSize+1));
-    Imgproc.morphologyEx(_img, _img, Imgproc.MORPH_GRADIENT, element);
+    Imgproc.morphologyEx(_mat, _mat, Imgproc.MORPH_GRADIENT, element);
     
     return this;
   }
   
   public ImageObject morphBlackhat(int elementSize) {
     Mat element = Imgproc.getStructuringElement(Imgproc.MORPH_RECT, new  Size(2*elementSize + 1, 2*elementSize+1));
-    Imgproc.morphologyEx(_img, _img, Imgproc.MORPH_BLACKHAT, element);
+    Imgproc.morphologyEx(_mat, _mat, Imgproc.MORPH_BLACKHAT, element);
     
     return this;
   }
@@ -356,17 +240,17 @@ public class ImageObject {
   public ImageObject resizeToPixel(int newWidth, int newHeight) {
     Size size = new Size(newWidth, newHeight);
 
-    Imgproc.resize(_img, _img, size);
+    Imgproc.resize(_mat, _mat, size);
     return this;
   }
 
   public ImageObject resizeToRatio(double newWidthRatio, double newHeightRatio) {
-    int newWidth = (int) (_img.width() * newWidthRatio);
-    int newHeight = (int) (_img.height() * newHeightRatio);
+    int newWidth = (int) (_mat.width() * newWidthRatio);
+    int newHeight = (int) (_mat.height() * newHeightRatio);
 
     Size size = new Size(newWidth, newHeight);
 
-    Imgproc.resize(_img, _img, size);
+    Imgproc.resize(_mat, _mat, size);
     return this;
   }
   
@@ -375,7 +259,7 @@ public class ImageObject {
   }
 
   public void saveAs(String name, String ext) throws MPException {
-    ImageObject.saveAs(_img, name, ext);
+    ImageObject.saveAs(_mat, name, ext);
   }
   
   public static void saveAs(Mat img, String name) throws MPException {
@@ -406,13 +290,13 @@ public class ImageObject {
   }
   
   public ImageObject copy() {
-    ImageObject copy = new ImageObject(_img);
+    ImageObject copy = new ImageObject(_mat);
     copy.setBounds(_bounds.copy());
     
     return copy;
   }
   
   public String matToString() {    
-    return _img.dump();
+    return _mat.dump();
   }
 }
