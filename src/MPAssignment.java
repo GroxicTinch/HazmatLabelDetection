@@ -5,6 +5,7 @@ import java.io.File;
 import java.io.IOException;
 import java.io.InputStream;
 import java.util.ArrayList;
+import java.util.PriorityQueue;
 import java.util.Scanner;
 
 import javax.imageio.ImageIO;
@@ -76,7 +77,7 @@ public class MPAssignment {
     }
   }
   
-  /* [Q] Prac4 Ex 2 says to implement a CCL, but OpenCV already has this as a function?
+  /* [Q] Prac 5 "Reshape the digit images and their averages to row vectors of size 1x200"
    */
 
   static void processFile(File file) throws IOException {
@@ -91,7 +92,7 @@ public class MPAssignment {
       
       
       ImageFileObject imgFO = origImgFO.copy();
-      winShow(origImgFO.getFilename(), origImgFO.getMat());
+      //winShow(origImgFO.getFilename(), origImgFO.getMat());
       
       /* 
        * [TODO] Ensure files are read alphabetically
@@ -108,6 +109,7 @@ public class MPAssignment {
        */
       
       /* Subtasks needing to be fixed
+       * [TODO] Fix Blobs to find holes
        * [TODO] Blob Boundry Extraction
        * [TODO] Blob Chords
        * [TODO] Prac4 Ex3 Histogram Feature Extraction
@@ -161,11 +163,31 @@ public class MPAssignment {
   
   @SuppressWarnings("unused")
   private static void PRACWORK(File file, ImageFileObject imgFO, ImageFileObject origImgFO) {
-    Mat out = new Mat();
+    Mat digitAvg[] = new Mat[4];
+    Mat[][] digitSamples = new Mat[4][100];
     
-    out = HOG.create(imgFO.getMat());
-    println(out.dump());
+    for(int digit = 0; digit <= 3; digit++) {
+      // Use format that has a lot of space so adding the pixels wont go over the max
+      Mat currAvg = new Mat(20,20, CvType.CV_64FC3);
+      digitAvg[digit] = new Mat(20,20, CvType.CV_64FC3);
+      Mat temp = new Mat(20,20, CvType.CV_64FC3);;
+      
+      for(int sample = 0; sample < 100; sample++) {
+        int x = (sample * 20);
+        int y = (digit * 100);
+        
+        digitSamples[digit][sample] = imgFO.copy().crop(new Point(x, y), 20, 20).getMat();
+        //[FIXME] Images are inconsistent
+        digitSamples[digit][sample].convertTo(temp, CvType.CV_64FC3);
+        
+        Core.add(currAvg, temp, currAvg);
+      }
+
+      currAvg.convertTo(digitAvg[digit], CvType.CV_8U, 0.01);
+      winShowRight("tmp "+ imgFO.getFilename(), digitAvg[digit]);
+    }
     
+    //winShowRight("tmp "+ imgFO.getFilename(), digitSamples[2][0]);
     //winShowRight("tmp "+ imgFO.getFilename(), out);
     winWait();
   }
@@ -241,6 +263,9 @@ public class MPAssignment {
     for(JFrame frame : _frameList) {
       frame.dispose();
     }
+    
+    _frameList.clear();
+
     /* HighGui calls with third party code since downgrading OpenCV removed gui functionality
     HighGui.waitKey();
     */
