@@ -5,6 +5,11 @@ import org.opencv.core.Core;
 import org.opencv.core.Mat;
 import org.opencv.core.MatOfFloat;
 import org.opencv.core.MatOfInt;
+import org.opencv.core.Point;
+import org.opencv.core.Rect;
+import org.opencv.core.Scalar;
+import org.opencv.core.Core.MinMaxLocResult;
+import org.opencv.imgcodecs.Imgcodecs;
 import org.opencv.imgproc.Imgproc;
 
 public class MatInfo {
@@ -127,5 +132,32 @@ public class MatInfo {
     }
     
     return mainColor;
+  }
+  
+  public static Rect templateMatch(Mat mat, Mat templ) {
+    // Imgproc.TM_CCOEFF finds the 8 instead of the B
+    // Imgproc.TM_CCOEFF_NORMED finds the 8 instead of the B
+    // Imgproc.TM_CCORR finds the headlight..
+    // Imgproc.TM_CCORR_NORMED finds the 8 instead of the B
+    // Imgproc.TM_SQDIFF finds the road...
+    // Imgproc.TM_SQDIFF_NORMED found best in this case
+    return templateMatch(mat, templ, Imgproc.TM_SQDIFF_NORMED);
+  }
+  
+  public static Rect templateMatch(Mat mat, Mat templ, int matchMethod) {
+    Mat result = new Mat();
+    Point matchLoc;
+    
+    Imgproc.matchTemplate(mat, templ, result, matchMethod);
+    Core.normalize(result, result, 0, 255, Core.NORM_MINMAX, -1, new Mat());
+    MinMaxLocResult mmlr = Core.minMaxLoc(result);
+    
+    if(matchMethod == Imgproc.TM_SQDIFF || matchMethod == Imgproc.TM_SQDIFF_NORMED) {
+      matchLoc = mmlr.minLoc;
+    } else {
+      matchLoc = mmlr.maxLoc;
+    }
+    
+    return new Rect(matchLoc, new Point(matchLoc.x + templ.cols(), matchLoc.y + templ.rows()));
   }
 }

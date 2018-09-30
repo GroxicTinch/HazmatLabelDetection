@@ -254,41 +254,6 @@ public class ImageObject {
     return this;
   }
   
-  public void saveAs(String name) throws MPException {
-    saveAs(name, ".png");
-  }
-
-  public void saveAs(String name, String ext) throws MPException {
-    ImageObject.saveAs(_mat, name, ext);
-  }
-  
-  public static void saveAs(Mat img, String name) throws MPException {
-    saveAs(img, name, "png");
-  }
-  
-  public static void saveAs(Mat img, String name, String ext) {
-    File file;
-    String newName = name;
-    
-    if(img.width() > 0 && img.height() > 0) {
-      if(ext != "") {
-        newName += "." + ext;
-      }
-  
-      // These 2 lines are needed to save to folders not already created
-      file = new File(newName);
-      file.getParentFile().mkdirs();
-      
-      Imgcodecs.imwrite(newName, img);
-    } else {
-      try {
-        throw new MPException("Matrix trying to be saved has width/height of 0");
-      } catch (MPException e) {
-        System.out.println(e.toString());
-      }
-    }
-  }
-  
   public ImageObject copy() {
     ImageObject copy = new ImageObject(_mat);
     copy.setBounds(_bounds.copy());

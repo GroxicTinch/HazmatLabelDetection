@@ -5,7 +5,6 @@ import java.io.File;
 import java.io.IOException;
 import java.io.InputStream;
 import java.util.ArrayList;
-import java.util.PriorityQueue;
 import java.util.Scanner;
 
 import javax.imageio.ImageIO;
@@ -14,15 +13,11 @@ import javax.swing.JFrame;
 import javax.swing.JLabel;
 
 import org.opencv.core.Core;
-import org.opencv.core.CvType;
 import org.opencv.core.Mat;
 import org.opencv.core.MatOfByte;
-import org.opencv.core.MatOfKeyPoint;
 import org.opencv.core.Point;
+import org.opencv.core.Rect;
 import org.opencv.core.Scalar;
-import org.opencv.core.Size;
-import org.opencv.features2d.FeatureDetector;
-import org.opencv.features2d.Features2d;
 import org.opencv.imgcodecs.Imgcodecs;
 import org.opencv.imgproc.Imgproc;
 
@@ -92,7 +87,7 @@ public class MPAssignment {
       
       
       ImageFileObject imgFO = origImgFO.copy();
-      //winShow(origImgFO.getFilename(), origImgFO.getMat());
+      winShow(origImgFO.getFilename(), origImgFO.getMat());
       
       /* 
        * [TODO] Ensure files are read alphabetically
@@ -163,32 +158,13 @@ public class MPAssignment {
   
   @SuppressWarnings("unused")
   private static void PRACWORK(File file, ImageFileObject imgFO, ImageFileObject origImgFO) {
-    Mat digitAvg[] = new Mat[4];
-    Mat[][] digitSamples = new Mat[4][100];
+    Mat templ = Imgcodecs.imread(".\\SampleData\\Prac6\\prac06ex01_template.png");
+    Rect foundPos = MatInfo.templateMatch(imgFO.getMat(), templ);
     
-    for(int digit = 0; digit <= 3; digit++) {
-      // Use format that has a lot of space so adding the pixels wont go over the max
-      Mat currAvg = new Mat(20,20, CvType.CV_64FC3);
-      digitAvg[digit] = new Mat(20,20, CvType.CV_64FC3);
-      Mat temp = new Mat(20,20, CvType.CV_64FC3);;
-      
-      for(int sample = 0; sample < 100; sample++) {
-        int x = (sample * 20);
-        int y = (digit * 100);
-        
-        digitSamples[digit][sample] = imgFO.copy().crop(new Point(x, y), 20, 20).getMat();
-        //[FIXME] Images are inconsistent
-        digitSamples[digit][sample].convertTo(temp, CvType.CV_64FC3);
-        
-        Core.add(currAvg, temp, currAvg);
-      }
-
-      currAvg.convertTo(digitAvg[digit], CvType.CV_8U, 0.01);
-      winShowRight("tmp "+ imgFO.getFilename(), digitAvg[digit]);
-    }
+    Imgproc.rectangle(imgFO.getMat(), foundPos.tl(), foundPos.br(), new Scalar(0,0,0), 2);
+    Imgproc.rectangle(imgFO.getMat(), foundPos.tl(), foundPos.br(), new Scalar(0,0,255));
     
-    //winShowRight("tmp "+ imgFO.getFilename(), digitSamples[2][0]);
-    //winShowRight("tmp "+ imgFO.getFilename(), out);
+    winShowRight("out "+ imgFO.getFilename(), imgFO.getMat());
     winWait();
   }
 

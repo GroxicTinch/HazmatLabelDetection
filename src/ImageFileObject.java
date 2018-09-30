@@ -73,9 +73,6 @@ public class ImageFileObject extends ImageObject {
   public boolean isImage() { return _isImage; }
 
   // Methods
-  public void saveAs(String name) throws MPException {
-    saveAs(name, _fileExt);
-  }
 
   // toString
   public String toString() {
