@@ -23,13 +23,16 @@ import org.opencv.imgproc.Imgproc;
 
 /**
  *
- * @author David
+ * @author David Hoy
  */
+
 public class MPAssignment {
   static int _winX = 0;
   static int _winY = 0;
   static int _winW = 0;
   static int _winH = 0;
+  
+  static{ System.loadLibrary(Core.NATIVE_LIBRARY_NAME); }
   
   static ArrayList<JFrame> _frameList = new ArrayList<JFrame>();
   
@@ -37,8 +40,7 @@ public class MPAssignment {
   * @param args the command line arguments
   */
   public static void main(String args[]) {
-    System.load(System.getProperty("user.dir") + "/lib/" + Core.NATIVE_LIBRARY_NAME + ".dll");
-    
+  	boolean foundImage = false;
     if(args.length == 0) {
       args = new String[1];
       args[0] = ".";
@@ -52,14 +54,19 @@ public class MPAssignment {
         if(dirList != null && dirList.length > 0 ) {
           for(File file : dirList) {
             try {
-              processFile(file);
+              if(processFile(file)) {
+              	foundImage = true;	// Check to see if any images have been found at all
+              }
             } catch (IOException e) {
               println("Skipping file due to issue opening: " + file.getName());
             }
           }
-        } else {
-          println("No images found in " + args[0]);
         }
+        
+        if(!foundImage) {
+          println("No images found in given directory:\n" + args[0]);
+        }
+        
       } else if(dir.isFile()){
         try {
           processFile(dir);
@@ -73,87 +80,90 @@ public class MPAssignment {
   }
   
   /* [Q] Prac 5 "Reshape the digit images and their averages to row vectors of size 1x200"
-   */
+   */ 
 
-  static void processFile(File file) throws IOException {
+  static boolean processFile(File file) throws IOException {
     ImageFileObject origImgFO = new ImageFileObject(file);
 
-    if(origImgFO.isImage()) {
-      String topColor = "Not Implemented";
-      String bottomColor = "Not Implemented";
-      String classNum = "Not Implemented";
-      String otherText = "Not Implemented";
-      String symbol = "Not Implemented";
-      
-      
-      ImageFileObject imgFO = origImgFO.copy();
-      winShow(origImgFO.getFilename(), origImgFO.getMat());
-      
-      /* 
-       * [TODO] Ensure files are read alphabetically
-       * 
-       * [TODO] Colour of top half background
-       * [TODO] Colour of bottom half background
-       * [TODO] Class Number
-       * [TODO] Other text
-       * [TODO] Symbol
-       * 
-       * [Ignore] Labels with background pattern
-       * [Ignore] Labels with explanatory text(text will never be smaller or denser then in figure 1)
-       * [Ignore] Labels with multiple class numbers or with non-numeric chars
-       */
-      
-      /* Subtasks needing to be fixed
-       * [TODO] Fix Blobs to find holes
-       * [TODO] Blob Boundry Extraction
-       * [TODO] Blob Chords
-       * [TODO] Prac4 Ex3 Histogram Feature Extraction
-       */
-      
-      // Use this when testing so I dont need to remove or add things
-      
-      if(true) {
-        PRACWORK(file, imgFO, origImgFO);
-        return;
-      }
-      
-      
-      Mat blobMat;
-      Mat out = Filter.thresholdInv(imgFO.copy().convert(Imgproc.COLOR_BGR2GRAY).getMat(), 80);
-      
-      ConnectedComponents connComp = new ConnectedComponents(out);
-      blobMat = connComp.generate();
-      //println(blobMat.dump());
-      ConnectedComponentsBlob[] connBlob = connComp.getBlobs();
-      
-      for(int i = 0; i < connBlob.length; i++) {
-        Imgproc.drawContours(imgFO.getMat(), connBlob[i].findAbsContoursFull(), 0, new Scalar(0,0,255));
-      }
-      
-      winShowRight("Blob " + imgFO.getFilename(), imgFO.getMat());
-      
-      /* Get Colours */
-      // [TODO] Create proper way to create masks
-      Mat topMask = Imgcodecs.imread("./SampleData/Mask/MaskTopTemp.png");
-      Imgproc.cvtColor(topMask, topMask, Imgproc.COLOR_BGR2GRAY);
-      Mat bottomMask = Imgcodecs.imread("./SampleData/Mask/MaskBottomTemp.png");
-      Imgproc.cvtColor(bottomMask, bottomMask, Imgproc.COLOR_BGR2GRAY);
-      int newHeight = imgFO.getHeight() / 2;
-      
-      Mat topHalf = imgFO.copy().crop(new Point(0,0), imgFO.getWidth(), newHeight).getMat();
-      Mat bottomHalf = imgFO.copy().crop(new Point(0, newHeight), imgFO.getWidth(), newHeight).getMat();
-      
-      topColor = MatInfo.getMainColor(topHalf, topMask);
-      bottomColor = MatInfo.getMainColor(bottomHalf, bottomMask);
-      
-      System.out.println("\nTop: " + topColor
-                     + "\nBottom: " + bottomColor
-                     + "\nClass: " + classNum
-                     + "\nText: " + otherText
-                     + "\nSymbol: " + symbol);
-
-      winWait();
+    if(!origImgFO.isImage()) {
+    	return false;
     }
+    
+    String topColor = "Not Implemented";
+	  String bottomColor = "Not Implemented";
+	  String classNum = "Not Implemented";
+	  String otherText = "Not Implemented";
+	  String symbol = "Not Implemented";
+	  
+	  
+	  ImageFileObject imgFO = origImgFO.copy();
+	  winShow(origImgFO.getFilename(), origImgFO.getMat());
+	  
+	  /* 
+	   * [TODO] Ensure files are read alphabetically
+	   * 
+	   * [TODO] Colour of top half background
+	   * [TODO] Colour of bottom half background
+	   * [TODO] Class Number
+	   * [TODO] Other text
+	   * [TODO] Symbol
+	   * 
+	   * [Ignore] Labels with background pattern
+	   * [Ignore] Labels with explanatory text(text will never be smaller or denser then in figure 1)
+	   * [Ignore] Labels with multiple class numbers or with non-numeric chars
+	   */
+	  
+	  /* Subtasks needing to be fixed
+	   * [TODO] Fix Blobs to find holes
+	   * [TODO] Blob Boundry Extraction
+	   * [TODO] Blob Chords
+	   * [TODO] Prac4 Ex3 Histogram Feature Extraction
+	   */
+	  
+	  // Use this when testing so I dont need to remove or add things
+	  
+	  if(false) {
+	    PRACWORK(file, imgFO, origImgFO);
+	    return true;
+	  }
+	  
+	 
+	  Mat blobMat;
+	  Mat out = Filter.thresholdInv(imgFO.copy().convert(Imgproc.COLOR_BGR2GRAY).getMat(), 80);
+	  
+	  ConnectedComponents connComp = new ConnectedComponents(out);
+	  blobMat = connComp.generate();
+	  //println(blobMat.dump());
+	  ConnectedComponentsBlob[] connBlob = connComp.getBlobs();
+	  
+	  for(int i = 0; i < connBlob.length; i++) {
+	    Imgproc.drawContours(imgFO.getMat(), connBlob[i].findAbsContoursFull(), 0, new Scalar(0,0,255));
+	  }
+	  
+	  winShowRight("Blob " + imgFO.getFilename(), imgFO.getMat());
+	  
+	  /* Get Colours */
+	  // [TODO] Create proper way to create masks
+	  Mat topMask = Imgcodecs.imread("./SampleData/Mask/MaskTopTemp.png");
+	  Imgproc.cvtColor(topMask, topMask, Imgproc.COLOR_BGR2GRAY);
+	  Mat bottomMask = Imgcodecs.imread("./SampleData/Mask/MaskBottomTemp.png");
+	  Imgproc.cvtColor(bottomMask, bottomMask, Imgproc.COLOR_BGR2GRAY);
+	  int newHeight = imgFO.getHeight() / 2;
+	  
+	  Mat topHalf = imgFO.copy().crop(new Point(0,0), imgFO.getWidth(), newHeight).getMat();
+	  Mat bottomHalf = imgFO.copy().crop(new Point(0, newHeight), imgFO.getWidth(), newHeight).getMat();
+	  
+	  topColor = MatInfo.getMainColor(topHalf, topMask);
+	  bottomColor = MatInfo.getMainColor(bottomHalf, bottomMask);
+	  
+	  System.out.println("\nTop: " + topColor
+	                 + "\nBottom: " + bottomColor
+	                 + "\nClass: " + classNum
+	                 + "\nText: " + otherText
+	                 + "\nSymbol: " + symbol);
+	
+	  winWait();
+	  return true;
   }
   
   @SuppressWarnings("unused")

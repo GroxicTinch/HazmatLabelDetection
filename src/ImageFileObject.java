@@ -23,7 +23,7 @@ public class ImageFileObject extends ImageObject {
    
     dotIndex = _filename.lastIndexOf(".");
     
-    if (dotIndex >= -1) {
+    if (dotIndex > -1) {
       _name = _filename.substring(0,dotIndex);
       _fileExt = _filename.substring(dotIndex+1);
 
