@@ -2,6 +2,7 @@ import java.util.ArrayList;
 import java.util.List;
 
 import org.opencv.core.Core;
+import org.opencv.core.CvType;
 import org.opencv.core.Mat;
 import org.opencv.core.MatOfFloat;
 import org.opencv.core.MatOfInt;
@@ -12,7 +13,7 @@ import org.opencv.core.Core.MinMaxLocResult;
 import org.opencv.imgcodecs.Imgcodecs;
 import org.opencv.imgproc.Imgproc;
 
-public class MatInfo {
+public class MatInfo { 
   public static String getMainColor(Mat img) {
     Mat mask = new Mat();
     return getMainColor(img, mask);

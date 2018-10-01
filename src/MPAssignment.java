@@ -158,13 +158,7 @@ public class MPAssignment {
   
   @SuppressWarnings("unused")
   private static void PRACWORK(File file, ImageFileObject imgFO, ImageFileObject origImgFO) {
-    Mat templ = Imgcodecs.imread(".\\SampleData\\Prac6\\prac06ex01_template.png");
-    Rect foundPos = MatInfo.templateMatch(imgFO.getMat(), templ);
-    
-    Imgproc.rectangle(imgFO.getMat(), foundPos.tl(), foundPos.br(), new Scalar(0,0,0), 2);
-    Imgproc.rectangle(imgFO.getMat(), foundPos.tl(), foundPos.br(), new Scalar(0,0,255));
-    
-    winShowRight("out "+ imgFO.getFilename(), imgFO.getMat());
+    winShowRight("out "+ imgFO.getFilename(), Filter.distanceTransform(imgFO.getMat()));
     winWait();
   }
 

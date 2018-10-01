@@ -1,44 +1,49 @@
-<?xml version="1.0" encoding="UTF-8" standalone="no"?>
-<!-- WARNING: Eclipse auto-generated file.
-              Any modifications will be overwritten.
-              To include a user specific buildfile here, simply create one in the same
-              directory with the processing instruction <?eclipse.ant.import?>
-              as the first entry and export the buildfile again. --><project basedir="." default="build" name="HazmatLabelDetection">
-    <property environment="env"/>
-    <property name="debuglevel" value="source,lines,vars"/>
-    <property name="target" value="1.7"/>
-    <property name="source" value="1.7"/>
+   <project name="SimpleSample" basedir="." default="rebuild-run">
 
-    <property name="src.dir" value="src"/>
-    <property name="classes.dir" value="bin"/>
-    	
-    <path id="OpenCV.userclasspath">
-        <pathelement location="lib/opencv-342.jar"/>
-    </path>
-    <path id="HazmatLabelDetection.classpath">
-        <pathelement location="."/>
-        <path refid="OpenCV.userclasspath"/>
-    </path>
-              	
-    <target name="clean">
-        <delete>
-            <fileset dir="." includes="**/*.class"/>
-        </delete>
-    </target>
+       <property name="src.dir"     value="src"/>
 
-    <target name="build" depends="compile"></target>
-              	
-  	<target name="compile">
-  		<mkdir dir="${classes.dir}"/>
-      <javac includeantruntime="false" srcdir="${src.dir}" destdir="${classes.dir}" classpathref="HazmatLabelDetection.classpath"/>
-    </target>
+       <property name="lib.dir"     value="${ocvJarDir}"/>
+       <path id="classpath">
+           <fileset dir="${lib.dir}" includes="**/*.jar"/>
+       </path>
 
-    <target name="jar" depends="compile">
-      <jar destfile="${ant.project.name}.jar" basedir="${classes.dir}">
-        <manifest>
-          <attribute name="Main-Class" value="MPAssignment"/>
-        	<attribute name="Class-Path" value="${OpenCV.userclasspath}"/>
-        </manifest>
-      </jar>
-  	</target>
-</project>
+       <property name="build.dir"   value="build"/>
+       <property name="classes.dir" value="${build.dir}/classes"/>
+       <property name="jar.dir"     value="${build.dir}/jar"/>
+
+       <property name="main-class"  value="${ant.project.name}"/>
+
+
+       <target name="clean">
+           <delete dir="${build.dir}"/>
+       </target>
+
+       <target name="compile">
+           <mkdir dir="${classes.dir}"/>
+           <javac includeantruntime="false" srcdir="${src.dir}" destdir="${classes.dir}" classpathref="classpath"/>
+       </target>
+
+       <target name="jar" depends="compile">
+           <mkdir dir="${jar.dir}"/>
+           <jar destfile="${jar.dir}/${ant.project.name}.jar" basedir="${classes.dir}">
+               <manifest>
+                   <attribute name="Main-Class" value="${main-class}"/>
+               </manifest>
+           </jar>
+       </target>
+
+       <target name="run" depends="jar">
+           <java fork="true" classname="${main-class}">
+               <sysproperty key="java.library.path" path="${ocvLibDir}"/>
+               <classpath>
+                   <path refid="classpath"/>
+                   <path location="${jar.dir}/${ant.project.name}.jar"/>
+               </classpath>
+           </java>
+       </target>
+
+       <target name="rebuild" depends="clean,jar"/>
+
+       <target name="rebuild-run" depends="clean,run"/>
+
+   </project>

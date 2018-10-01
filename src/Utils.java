@@ -29,16 +29,17 @@ public class Utils {
     return var;
   }
   
-  public static Mat matPut(int type, int[][] matData) {
+  public static Mat matPut(int type, double[][] matData) {
     int width = matData[0].length;
     int height = matData.length;
     
     Mat matrix = new Mat(height, width, type);
-  
-    for(int col = 0; col < width; col++) {
-      for(int row = 0; row < height; row++) {
-        matrix.put(row, col, matData[row][col]);
-      }
+    
+    for(int row = 0; row < width; row++) {
+      matrix.put(row, 0, matData[row]);
+      //for(int col = 0; col < height; col++) {
+        //matrix.put(row, col, matData[row][col]);
+      //}
     }
     
     return matrix;

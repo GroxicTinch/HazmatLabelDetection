@@ -152,6 +152,11 @@ public class ImageObject {
     Imgproc.cvtColor(_mat, _mat, convertType);
     return this;
   }
+  
+  public ImageObject convertToBW() {
+    Imgproc.cvtColor(_mat, _mat, Imgproc.COLOR_BGR2GRAY);
+    return this;
+  }
 
   public ImageObject crop(Point p1, Point p2) {
     int width = (int) (p2.x - p1.x);
@@ -192,48 +197,6 @@ public class ImageObject {
   
   public ImageObject equalizeContrast() {
     Imgproc.equalizeHist(_mat, _mat);
-    return this;
-  }
-
-  public ImageObject morphDilate(int elementSize) {
-    Mat element = Imgproc.getStructuringElement(Imgproc.MORPH_RECT, new  Size(2*elementSize + 1, 2*elementSize+1));
-    Imgproc.morphologyEx(_mat, _mat, Imgproc.MORPH_DILATE, element);
-    
-    return this;
-  }
-  
-  public ImageObject morphErode(int elementSize) {
-    Mat element = Imgproc.getStructuringElement(Imgproc.MORPH_RECT, new  Size(2*elementSize + 1, 2*elementSize+1));
-    Imgproc.morphologyEx(_mat, _mat, Imgproc.MORPH_ERODE, element);
-    
-    return this;
-  }
-  
-  public ImageObject morphOpen(int elementSize) {
-    Mat element = Imgproc.getStructuringElement(Imgproc.MORPH_RECT, new  Size(2*elementSize + 1, 2*elementSize+1));
-    Imgproc.morphologyEx(_mat, _mat, Imgproc.MORPH_OPEN, element);
-    
-    return this;
-  }
-  
-  public ImageObject morphClose(int elementSize) {
-    Mat element = Imgproc.getStructuringElement(Imgproc.MORPH_RECT, new  Size(2*elementSize + 1, 2*elementSize+1));
-    Imgproc.morphologyEx(_mat, _mat, Imgproc.MORPH_CLOSE, element);
-       
-    return this;
-  }
-  
-  public ImageObject morphGradient(int elementSize) {
-    Mat element = Imgproc.getStructuringElement(Imgproc.MORPH_RECT, new  Size(2*elementSize + 1, 2*elementSize+1));
-    Imgproc.morphologyEx(_mat, _mat, Imgproc.MORPH_GRADIENT, element);
-    
-    return this;
-  }
-  
-  public ImageObject morphBlackhat(int elementSize) {
-    Mat element = Imgproc.getStructuringElement(Imgproc.MORPH_RECT, new  Size(2*elementSize + 1, 2*elementSize+1));
-    Imgproc.morphologyEx(_mat, _mat, Imgproc.MORPH_BLACKHAT, element);
-    
     return this;
   }
   
