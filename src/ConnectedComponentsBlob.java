@@ -10,6 +10,7 @@ import org.opencv.imgproc.Imgproc;
 
 public class ConnectedComponentsBlob {
   private HashSet<Point> _pixelList;
+  private Point[] _corners;
   
   private int _x;
   private int _y;
@@ -45,6 +46,14 @@ public class ConnectedComponentsBlob {
     return _y;
   }
   
+  public int getX2() {
+    return _x2;
+  }
+  
+  public int getY2() {
+    return _y2;
+  }
+  
   public int getWidth() {
     return (_x2 - _x) + 1;
   }
@@ -59,6 +68,32 @@ public class ConnectedComponentsBlob {
 
   public int getHeightFull() {
     return _matHeight;
+  }
+  
+  public Point tl() {
+    return new Point(_x, _y);
+  }
+
+  public Point br() {
+      return new Point(_x2, _y2);
+  }
+  
+  public Point[] getCornersHarris() {
+    if(_corners == null) {
+      Mat img = Filter.borderConstant(getMat(), 0);
+      _corners = Filter.cornersHarris(img);
+    }
+    
+    return _corners;
+  }
+  
+  public Point[] getCornersShiTomasi() {
+    if(_corners == null) {
+      Mat img = Filter.borderConstant(getMat(), 0);
+      _corners = Filter.cornersShiTomasi(img);
+    }
+    
+    return _corners;
   }
   
   public Mat getMat() {
@@ -117,7 +152,8 @@ public class ConnectedComponentsBlob {
   public ArrayList<MatOfPoint> findContours(int method) {
     ArrayList<MatOfPoint> contours = new ArrayList<MatOfPoint>();
     
-    Imgproc.findContours(getMat(), contours, new Mat(), Imgproc.RETR_EXTERNAL, method);
+    // FindContours changes the src Mat for some reason, so clone the original
+    Imgproc.findContours(getMat().clone(), contours, new Mat(), Imgproc.RETR_EXTERNAL, method);
     
     return contours;
   }
@@ -133,7 +169,8 @@ public class ConnectedComponentsBlob {
   public ArrayList<MatOfPoint> findContoursFull(int method) {
     ArrayList<MatOfPoint> contours = new ArrayList<MatOfPoint>();
     
-    Imgproc.findContours(getMatFull(), contours, new Mat(), Imgproc.RETR_EXTERNAL, method);
+    // FindContours changes the src Mat for some reason, so clone the original
+    Imgproc.findContours(getMatFull().clone(), contours, new Mat(), Imgproc.RETR_EXTERNAL, method);
     
     return contours;
   }
@@ -141,7 +178,7 @@ public class ConnectedComponentsBlob {
   public void generateBoundaryLists() {
     // Get the mat, add a border of 0 so that edge detection gets edge pixels, then perform sobel filter
     Mat edgeMat = Filter.laplacian(Filter.borderConstant(getMat(), 0));
-    
+    // [TODO] get edge Mats
   }
   
   // Casting because it rounds the number without it

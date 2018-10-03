@@ -1,11 +1,16 @@
+import java.util.ArrayList;
+import java.util.Random;
+
 import org.opencv.core.Core;
 import org.opencv.core.CvType;
 import org.opencv.core.Mat;
+import org.opencv.core.MatOfPoint;
+import org.opencv.core.Point;
 import org.opencv.core.Scalar;
 import org.opencv.core.Size;
 import org.opencv.imgproc.Imgproc;
 
-public class Filter {  
+public class Filter {
   public static Mat borderConstant(Mat img, int value) {
     return borderConstant(img, 1, value);
   }
@@ -16,8 +21,59 @@ public class Filter {
     return img;
   }
   
-//https://docs.opencv.org/trunk/d2/dbd/tutorial_distance_transform.html
- public static Mat distanceTransformRemoveBackground(Mat img, Mat foregroundMask) throws MPException {
+  //Should be used with grayscale
+  public static Point[] cornersHarris(Mat img) {
+     return cornersHarris(img, 3, 1, 0.1, 200);
+  }
+   
+  public static Point[] cornersHarris(Mat img, int blockSize, int apertureSize, double k, int threshold) {
+     Mat harrisMat = new Mat();
+     Mat harrisMatNormal = new Mat();
+     
+     ArrayList<Point> corners = new ArrayList<Point>();
+     
+     Imgproc.cornerHarris(img, harrisMat, blockSize, apertureSize, k);
+     
+     Core.normalize(harrisMat, harrisMatNormal, 0, 255, Core.NORM_MINMAX, CvType.CV_32F, new Mat());
+     //Core.convertScaleAbs(harrisMatNormal, harrisMatNormalScaled);
+   
+    for( int row = 0; row < harrisMatNormal.rows() ; row++){
+       for( int col = 0; col < harrisMatNormal.cols(); col++){
+         int angle = (int) harrisMatNormal.get(row, col)[0]; // I think its angle
+         
+         if (angle > threshold){
+           corners.add(new Point(row, col));
+         }
+       }
+     }
+     
+     return (Point[])corners.toArray();
+  }
+   
+  //Should be used with grayscale
+  public static Point[] cornersShiTomasi(Mat img) {
+     return cornersShiTomasi(img, 0, 0.01, 10);
+  }
+   
+  //https://github.com/opencv/opencv/blob/master/samples/java/tutorial_code/TrackingMotion/good_features_to_track/GoodFeaturesToTrackDemo.java
+  public static Point[] cornersShiTomasi(Mat img, int maxCorners, double quality, double minDist) {
+     MatOfPoint corners = new MatOfPoint();
+     
+     Imgproc.goodFeaturesToTrack(img, corners, maxCorners, quality, minDist);
+     
+     return corners.toArray();
+  }
+  
+  public static Mat crop(Mat img, Point p1, int width, int height) {
+    return crop(img, p1, new Point(p1.x + width, p1.y + height));
+  }
+  
+  public static Mat crop(Mat img, Point p1, Point p2) {
+    return img.submat((int)p1.y, (int)p2.y, (int)p1.x, (int)p2.x);
+  }
+  
+  //https://docs.opencv.org/trunk/d2/dbd/tutorial_distance_transform.html
+  public static Mat distanceTransformRemoveBackground(Mat img, Mat foregroundMask) throws MPException {
    // White backgrounds cause issue, convert white pixels to black, using the foreground mask if possible
    // Converting to byte array and back means less .get and .put calls
    byte[] imgData = new byte[(int) (img.total() * img.channels())];
@@ -59,7 +115,7 @@ public class Filter {
    int distType = Imgproc.DIST_L2;
    
    // Sharpen by using a strong Laplacian
-   Core.subtract(img, laplacianStrong(img), result, new Mat(), CvType.CV_32F);
+   Core.subtract(img, laplacianStrong(gaussian(img)), result, new Mat(), CvType.CV_32F);
    
    // Convert 8bit for threshold function
    result.convertTo(result, CvType.CV_8U);
@@ -67,7 +123,7 @@ public class Filter {
    Imgproc.cvtColor(result, binary, Imgproc.COLOR_BGR2GRAY);
    binary = thresholdOtsu(binary, 50);
    
-   Imgproc.distanceTransform(binary, dist, distType, 3);
+   Imgproc.distanceTransform(binary, dist, distType, 5);
    
    // Normalize and then use threshold to get the groups(hopefully separated)
    Core.normalize(dist, dist, 0, 255, Core.NORM_MINMAX);
@@ -78,7 +134,62 @@ public class Filter {
    
    dist = morphDilate(dist, 3);
    
-   return dist;
+   // Find contours and draw markers
+   Mat hierarchy = new Mat();
+   ArrayList<MatOfPoint> contours = new ArrayList<MatOfPoint>();
+   
+   Imgproc.findContours(dist, contours, hierarchy, Imgproc.RETR_EXTERNAL, Imgproc.CHAIN_APPROX_SIMPLE);
+   
+   Mat markers = Mat.zeros(dist.size(), CvType.CV_32S);
+   
+   for (int i = 0; i < contours.size(); i++) {
+     Imgproc.drawContours(markers, contours, i, new Scalar(i + 1), -1);
+   }
+      
+   Imgproc.circle(markers, new Point(5, 5), 3, new Scalar(255, 255, 255), -1);
+   
+   // Perform the watershed algorithm
+   Imgproc.watershed(result, markers);
+   
+   // Generate random colors
+   Random rng = new Random(12345);
+   
+   ArrayList<Scalar> colors = new ArrayList<>(contours.size());
+   
+   for (int i = 0; i < contours.size(); i++) {
+       int b = rng.nextInt(256);
+       int g = rng.nextInt(256);
+       int r = rng.nextInt(256);
+       colors.add(new Scalar(b, g, r));
+   }
+   
+   // Create the result image
+   Mat out = Mat.zeros(markers.size(), CvType.CV_8UC3);
+   
+   byte[] outData = new byte[(int) (out.total() * out.channels())];
+   out.get(0, 0, outData);
+   
+   // Fill labeled objects with random colors
+   int[] markersData = new int[(int) (markers.total() * markers.channels())];
+   markers.get(0, 0, markersData);
+   
+   for (int i = 0; i < markers.rows(); i++) {
+       for (int j = 0; j < markers.cols(); j++) {
+           int index = markersData[i * markers.cols() + j];
+           if (index > 0 && index <= contours.size()) {
+               outData[(i * out.cols() + j) * 3 + 0] = (byte) colors.get(index - 1).val[0];
+               outData[(i * out.cols() + j) * 3 + 1] = (byte) colors.get(index - 1).val[1];
+               outData[(i * out.cols() + j) * 3 + 2] = (byte) colors.get(index - 1).val[2];
+           } else {
+               outData[(i * out.cols() + j) * 3 + 0] = 0;
+               outData[(i * out.cols() + j) * 3 + 1] = 0;
+               outData[(i * out.cols() + j) * 3 + 2] = 0;
+           }
+       }
+   }
+   out.put(0, 0, outData);
+   
+   return out;
  }
   
   public static Mat gaussian(Mat img) {

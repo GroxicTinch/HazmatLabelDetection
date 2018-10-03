@@ -1,4 +1,4 @@
-<project name="MPAssignment" basedir="." default="rebuild-run">
+<project name="MPAssignment" basedir="." default="compile">
 	<property name="src.dir"     value="src"/>
 	
 	<property name="lib.dir"     value="${ocvJarDir}"/>

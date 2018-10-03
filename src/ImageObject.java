@@ -102,49 +102,6 @@ public class ImageObject {
 
     return histImageMat;
   }
-  
-  // Should be used with grayscale
-  public Point[] getHarrisCorners() {
-    return getHarrisCorners(3, 1, 0.1, 200);
-  }
-  
-  public Point[] getHarrisCorners(int blockSize, int apertureSize, double k, int threshold) {
-    Mat harrisMat = new Mat();
-    Mat harrisMatNormal = new Mat();
-    
-    ArrayList<Point> corners = new ArrayList<Point>();
-    
-    Imgproc.cornerHarris(_mat, harrisMat, blockSize, apertureSize, k);
-    
-    Core.normalize(harrisMat, harrisMatNormal, 0, 255, Core.NORM_MINMAX, CvType.CV_32F, new Mat());
-    //Core.convertScaleAbs(harrisMatNormal, harrisMatNormalScaled);
-    
-    for( int row = 0; row < harrisMatNormal.rows() ; row++){
-      for( int col = 0; col < harrisMatNormal.cols(); col++){
-        int angle = (int) harrisMatNormal.get(row, col)[0]; // I think its angle
-        
-        if (angle > threshold){
-          corners.add(new Point(row, col));
-        }
-      }
-    }
-    
-    return (Point[])corners.toArray();
-  }
-  
-  //Should be used with grayscale
-  public Point[] getShiTomasiCorners() {
-    return getShiTomasiCorners(0, 0.01, 10);
-  }
-  
-  //https://github.com/opencv/opencv/blob/master/samples/java/tutorial_code/TrackingMotion/good_features_to_track/GoodFeaturesToTrackDemo.java
-  public Point[] getShiTomasiCorners(int maxCorners, double quality, double minDist) {
-    MatOfPoint corners = new MatOfPoint();
-    
-    Imgproc.goodFeaturesToTrack(_mat, corners, maxCorners, quality, minDist);
-    
-    return corners.toArray();
-  }
 
   // Destructive Modifications, They WILL change the _img
   public ImageObject convert(int convertType) {

@@ -89,12 +89,7 @@ public class MPAssignment {
     	return false;
     }
     
-    String topColor = "Not Implemented";
-	  String bottomColor = "Not Implemented";
-	  String classNum = "Not Implemented";
-	  String otherText = "Not Implemented";
-	  String symbol = "Not Implemented";
-	  
+    OutputObject outputObj = new OutputObject();
 	  
 	  ImageFileObject imgFO = origImgFO.copy();
 	  winShow(origImgFO.getFilename(), origImgFO.getMat());
@@ -120,6 +115,10 @@ public class MPAssignment {
 	   * [TODO] Prac4 Ex3 Histogram Feature Extraction
 	   */
 	  
+	  /* [Notes]
+	   * Class Number is located 70%:350 from top of the sign and ends at 90%:450, 38%:190 from left start til 63%:315
+	   */
+	  
 	  // Use this when testing so I dont need to remove or add things
 	  
 	  if(false) {
@@ -127,55 +126,74 @@ public class MPAssignment {
 	    return true;
 	  }
 	  
+	  ArrayList<Mat> classNumMatList = new ArrayList<Mat>();
 	 
-	  Mat blobMat;
 	  Mat out = Filter.thresholdInv(imgFO.copy().convert(Imgproc.COLOR_BGR2GRAY).getMat(), 80);
 	  
 	  ConnectedComponents connComp = new ConnectedComponents(out);
-	  blobMat = connComp.generate();
-	  //println(blobMat.dump());
+	  connComp.generate();
+	  
 	  ConnectedComponentsBlob[] connBlob = connComp.getBlobs();
 	  
 	  for(int i = 0; i < connBlob.length; i++) {
-	    Imgproc.drawContours(imgFO.getMat(), connBlob[i].findAbsContoursFull(), 0, new Scalar(0,0,255));
+	    int signH = out.rows();
+	    int signW = out.cols();
+	    
+	    Rect classNumLocation = new Rect(new Point(signW * 0.38, signH * 0.70), new Point(signW * 0.63, signH * 0.90));
+	    
+	    if(classNumLocation.contains(connBlob[i].tl())) {
+	      // It is most likely the class identification number
+	      Imgproc.drawContours(imgFO.getMat(), connBlob[i].findAbsContoursFull(), 0, new Scalar(0,255,0), 2);
+	      
+	      outputObj.classNum = "Not ready but it has this many corners: " + connBlob[i].getCornersShiTomasi().length;
+	    } else if(connBlob[i].getY2() < signH/2) {
+	      // It is in the top half, which means it could be Symbol\Explosive number or descriptive text,
+	      // Sometimes picks up bounding box if it is a different colour to bottom half bounding box
+	      Imgproc.drawContours(imgFO.getMat(), connBlob[i].findAbsContoursFull(), 0, new Scalar(255,0,0), 2);
+	    } else {
+	      Imgproc.drawContours(imgFO.getMat(), connBlob[i].findAbsContoursFull(), 0, new Scalar(0,0,255), 2);
+	    }
 	  }
 	  
 	  winShowRight("Blob " + imgFO.getFilename(), imgFO.getMat());
 	  
 	  /* Get Colours */
-	  // [TODO] Create proper way to create masks
-	  Mat topMask = Imgcodecs.imread("./SampleData/Mask/MaskTopTemp.png");
-	  Imgproc.cvtColor(topMask, topMask, Imgproc.COLOR_BGR2GRAY);
-	  Mat bottomMask = Imgcodecs.imread("./SampleData/Mask/MaskBottomTemp.png");
-	  Imgproc.cvtColor(bottomMask, bottomMask, Imgproc.COLOR_BGR2GRAY);
-	  int newHeight = imgFO.getHeight() / 2;
+	  findSignHalfColors(origImgFO.getMat(), outputObj);
 	  
-	  Mat topHalf = imgFO.copy().crop(new Point(0,0), imgFO.getWidth(), newHeight).getMat();
-	  Mat bottomHalf = imgFO.copy().crop(new Point(0, newHeight), imgFO.getWidth(), newHeight).getMat();
-	  
-	  topColor = MatInfo.getMainColor(topHalf, topMask);
-	  bottomColor = MatInfo.getMainColor(bottomHalf, bottomMask);
-	  
-	  System.out.println("\nTop: " + topColor
-	                 + "\nBottom: " + bottomColor
-	                 + "\nClass: " + classNum
-	                 + "\nText: " + otherText
-	                 + "\nSymbol: " + symbol);
+	  System.out.println(outputObj.toString());
 	
 	  winWait();
 	  return true;
   }
   
+  //Current progress
+  /*
+   * placard-7-radioactive.png is identified wrong, sees top as white instead of yellow
+   */
+  
+  private static void findSignHalfColors(Mat img, OutputObject outputObj) {
+    // [TODO] Create proper way to create masks
+    // [TODO] remove\mask blobs from Mat going to findSignHalfColors()
+    Mat topMask = Imgcodecs.imread("./SampleData/Mask/MaskTopTemp.png");
+    Imgproc.cvtColor(topMask, topMask, Imgproc.COLOR_BGR2GRAY);
+    Mat bottomMask = Imgcodecs.imread("./SampleData/Mask/MaskBottomTemp.png");
+    Imgproc.cvtColor(bottomMask, bottomMask, Imgproc.COLOR_BGR2GRAY);
+    int newHeight = img.rows() / 2;
+    
+    Mat topHalf = Filter.crop(img, new Point(0,0), img.cols(), newHeight);
+    Mat bottomHalf = Filter.crop(img, new Point(0, newHeight), img.cols(), newHeight);
+    
+    outputObj.topColor = MatInfo.getMainColor(topHalf, topMask);
+    outputObj.bottomColor = MatInfo.getMainColor(bottomHalf, bottomMask);
+  }
+  
   @SuppressWarnings("unused")
   private static void PRACWORK(File file, ImageFileObject imgFO, ImageFileObject origImgFO) {
-    winShowRight("out "+ imgFO.getFilename(), Filter.distanceTransform(imgFO.getMat()));
+    
+    
+    //winShowRight("out "+ imgFO.getFilename(), Filter.distanceTransform(imgFO.getMat()));
     winWait();
   }
-
-  // Current progress
-  /*
-   * placard-7-radioactive.png is misidentified, sees top as white instead of yellow
-   */
   
   static void println(String message) {
     System.out.println(message);
