@@ -1,5 +1,7 @@
 
 public class OutputObject {
+  private String _filename;
+  
   // Not using _ naming convention because they are public
   String topColor;
   String bottomColor;
@@ -7,7 +9,9 @@ public class OutputObject {
   String otherText;
   String symbol;
   
-  public OutputObject() {
+  public OutputObject(String filename) {
+    _filename = filename;
+    
     topColor = "Not Implemented";
     bottomColor = "Not Implemented";
     classNum = "Not Implemented";
@@ -17,7 +21,8 @@ public class OutputObject {
   
   @Override
   public String toString() {
-    return "\nTop: " + topColor
+    return _filename
+         + "\nTop: " + topColor
          + "\nBottom: " + bottomColor
          + "\nClass: " + classNum
          + "\nText: " + otherText

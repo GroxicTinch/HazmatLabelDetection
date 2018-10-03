@@ -128,13 +128,15 @@ public class ConnectedComponentsBlob {
     
     if(pos.x < _x || _x == -1) {
       _x = (int) pos.x;
-    } else if(pos.x > _x2) {
+    } 
+    if(pos.x > _x2) {
       _x2 = (int) pos.x;
     }
     
     if(pos.y < _y || _y == -1) {
       _y = (int) pos.y;
-    } else if(pos.y > _y2) {
+    }
+    if(pos.y > _y2) {
       _y2 = (int) pos.y;
     }
     

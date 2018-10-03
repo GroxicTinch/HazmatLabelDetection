@@ -20,6 +20,11 @@ public class ConnectedComponents {
     _img = img;
   }
   
+  public ConnectedComponents(Mat img, Mat mask) {
+    _img = Mat.zeros(img.size(), CvType.CV_8U);
+    img.copyTo(_img, mask);
+  }
+  
   private void addPixel(Point pos, int label) {
     ConnectedComponentsBlob posSet = _connList.getOrDefault(label, new ConnectedComponentsBlob(_img));
     

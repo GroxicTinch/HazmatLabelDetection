@@ -14,7 +14,11 @@ public class ImageFileObject extends ImageObject {
 
   // Constructors
   public ImageFileObject(File file) throws IOException {
-    super(Imgcodecs.imread(file.getCanonicalPath()));
+    this(file, Imgcodecs.IMREAD_COLOR);
+  }
+  
+  public ImageFileObject(File file, int type) throws IOException {
+    super(Imgcodecs.imread(file.getCanonicalPath(), type));
     
     int dotIndex;
 

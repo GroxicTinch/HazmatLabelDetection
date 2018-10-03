@@ -76,7 +76,7 @@ public class MatInfo {
     
     for(int i = 0; i < binsH; i++) {
       double countH = histH.get(i, 0)[0];
-            
+      
       if(countH > maxH) {
         maxBinH = i;
         maxH = countH;
@@ -86,7 +86,7 @@ public class MatInfo {
     for(int i = 0; i <= 255; i++) {
       double countS = histS.get(i, 0)[0];
       double countV = histV.get(i, 0)[0];
-            
+      
       if(countS > maxS) {
         maxBinS = i;
         maxS = countS;
@@ -134,7 +134,7 @@ public class MatInfo {
     return mainColor;
   }
   
-  public static Rect templateMatch(Mat mat, Mat templ) {
+  public static TemplateMatchResult templateMatch(Mat mat, Mat templ) {
     // Imgproc.TM_CCOEFF finds the 8 instead of the B
     // Imgproc.TM_CCOEFF_NORMED finds the 8 instead of the B
     // Imgproc.TM_CCORR finds the headlight..
@@ -144,20 +144,27 @@ public class MatInfo {
     return templateMatch(mat, templ, Imgproc.TM_SQDIFF_NORMED);
   }
   
-  public static Rect templateMatch(Mat mat, Mat templ, int matchMethod) {
+  public static TemplateMatchResult templateMatch(Mat mat, Mat templ, int matchMethod) {
+    TemplateMatchResult tmr = new TemplateMatchResult();
     Mat result = new Mat();
     Point matchLoc;
+    Double percent;
     
     Imgproc.matchTemplate(mat, templ, result, matchMethod);
-    Core.normalize(result, result, 0, 255, Core.NORM_MINMAX, -1, new Mat());
+    //Core.normalize(result, result, 0, 255, Core.NORM_MINMAX, -1, new Mat());
     MinMaxLocResult mmlr = Core.minMaxLoc(result);
     
     if(matchMethod == Imgproc.TM_SQDIFF || matchMethod == Imgproc.TM_SQDIFF_NORMED) {
       matchLoc = mmlr.minLoc;
+      percent = 1-mmlr.minVal;
     } else {
       matchLoc = mmlr.maxLoc;
+      percent = mmlr.maxVal;
     }
     
-    return new Rect(matchLoc, new Point(matchLoc.x + templ.cols(), matchLoc.y + templ.rows()));
+    tmr.setRect(new Rect(matchLoc, new Point(matchLoc.x + templ.cols(), matchLoc.y + templ.rows())));
+    tmr.setPercent(percent);
+
+    return tmr;
   }
 }

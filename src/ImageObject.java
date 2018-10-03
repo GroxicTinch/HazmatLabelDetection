@@ -1,4 +1,3 @@
-import java.io.File;
 import java.util.ArrayList;
 import java.util.List;
 
@@ -7,10 +6,8 @@ import org.opencv.core.CvType;
 import org.opencv.core.Mat;
 import org.opencv.core.MatOfFloat;
 import org.opencv.core.MatOfInt;
-import org.opencv.core.MatOfPoint;
 import org.opencv.core.Point;
 import org.opencv.core.Scalar;
-import org.opencv.core.Size;
 import org.opencv.imgproc.Imgproc;
 
 public class ImageObject {
@@ -113,20 +110,6 @@ public class ImageObject {
     Imgproc.cvtColor(_mat, _mat, Imgproc.COLOR_BGR2GRAY);
     return this;
   }
-
-  public ImageObject crop(Point p1, Point p2) {
-    int width = (int) (p2.x - p1.x);
-    int height = (int) (p2.y - p1.y);
-    
-    return crop(p1, width, height);
-  }
-
-  public ImageObject crop(Point p1, int width, int height) {
-    _bounds.setBox(p1.x, p1.y, width, height);
-
-    _mat = _mat.submat(_bounds.getBoxRect());
-    return this;
-  }
   
   public ImageObject drawBoundingBox(Point p1, Point p2, Scalar color) {
     Imgproc.rectangle(_mat, p1, p2, color, 2);
@@ -153,23 +136,6 @@ public class ImageObject {
   
   public ImageObject equalizeContrast() {
     Imgproc.equalizeHist(_mat, _mat);
-    return this;
-  }
-  
-  public ImageObject resizeToPixel(int newWidth, int newHeight) {
-    Size size = new Size(newWidth, newHeight);
-
-    Imgproc.resize(_mat, _mat, size);
-    return this;
-  }
-
-  public ImageObject resizeToRatio(double newWidthRatio, double newHeightRatio) {
-    int newWidth = (int) (_mat.width() * newWidthRatio);
-    int newHeight = (int) (_mat.height() * newHeightRatio);
-
-    Size size = new Size(newWidth, newHeight);
-
-    Imgproc.resize(_mat, _mat, size);
     return this;
   }
   

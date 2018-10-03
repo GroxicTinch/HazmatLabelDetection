@@ -64,14 +64,6 @@ public class Filter {
      return corners.toArray();
   }
   
-  public static Mat crop(Mat img, Point p1, int width, int height) {
-    return crop(img, p1, new Point(p1.x + width, p1.y + height));
-  }
-  
-  public static Mat crop(Mat img, Point p1, Point p2) {
-    return img.submat((int)p1.y, (int)p2.y, (int)p1.x, (int)p2.x);
-  }
-  
   //https://docs.opencv.org/trunk/d2/dbd/tutorial_distance_transform.html
   public static Mat distanceTransformRemoveBackground(Mat img, Mat foregroundMask) throws MPException {
    // White backgrounds cause issue, convert white pixels to black, using the foreground mask if possible
@@ -463,7 +455,7 @@ public class Filter {
   public static Mat thresholdInv(Mat img, double thresh) {
     Mat outputMat = new Mat();
     
-    Imgproc.threshold(img, outputMat, thresh, 255, Imgproc.THRESH_BINARY_INV);
+    Imgproc.threshold(img, outputMat, thresh, 255, Imgproc.THRESH_BINARY | Imgproc.THRESH_BINARY_INV);
     
     return outputMat;
   }
@@ -482,5 +474,46 @@ public class Filter {
     Imgproc.threshold(img, outputMat, thresh, 255, Imgproc.THRESH_OTSU | Imgproc.THRESH_BINARY_INV);
     
     return outputMat;
+  }
+  
+  // Crop\Resize
+  public static Mat crop(Mat mat, Point p1, int width, int height) {
+    return crop(mat, p1, new Point(p1.x + width, p1.y + height));
+  }
+  
+  public static Mat crop(Mat mat, Point p1, Point p2) {
+    return mat.submat((int)p1.y, (int)p2.y, (int)p1.x, (int)p2.x);
+  }
+  
+  public static Mat resizeToPixel(Mat mat, int newWidth, int newHeight) {
+    Mat out = new Mat();
+    Size size = new Size(newWidth, newHeight);
+
+    Imgproc.resize(mat, out, size);
+    return out;
+  }
+  
+  public static Mat resizeToPixelWidth(Mat mat, int newWidth) {
+    Mat out = new Mat();
+    double ratio = (double)mat.width() / (double)newWidth;
+    Size size = new Size(newWidth, mat.height() * ratio);
+
+    Imgproc.resize(mat, out, size);
+    return out;
+  }
+  
+  public static Mat resizeToRatio(Mat mat, double newRatio) {
+    return resizeToRatio(mat, newRatio, newRatio);
+  }
+
+  public static Mat resizeToRatio(Mat mat, double newWidthRatio, double newHeightRatio) {
+    Mat out = new Mat();
+    int newWidth = (int) (mat.width() * newWidthRatio);
+    int newHeight = (int) (mat.height() * newHeightRatio);
+
+    Size size = new Size(newWidth, newHeight);
+
+    Imgproc.resize(mat, out, size);
+    return out;
   }
 }
