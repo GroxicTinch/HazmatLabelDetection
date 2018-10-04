@@ -1,5 +1,9 @@
 import org.opencv.core.Point;
 
+/*
+ * Object that holds a character and its top left + bottom right corners as points,
+ * and allows it to be used in a sorted tree placing them based on position
+ */
 public class CharAndLoc implements Comparable<CharAndLoc> {
   private Character _c;
   private Point _loc;
@@ -46,14 +50,17 @@ public class CharAndLoc implements Comparable<CharAndLoc> {
       throw new ClassCastException("same object expected");
     }
     
+    // If the current character is to the left and not lower than the other, put it to the left
     if(_loc.x < otherCharAndLoc.getLoc().x && _loc.y < otherCharAndLoc.getLoc2().y) {
       return -1;
     }
     
+    // If it is lower then put it to the right
     if(_loc2.y > otherCharAndLoc.getLoc().y) {
       return 1;
-    } 
+    }
 
+    // If neither then put it to the left
     return -1;
   }
 }

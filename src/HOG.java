@@ -1,9 +1,9 @@
 import org.opencv.core.Core;
 import org.opencv.core.CvType;
 import org.opencv.core.Mat;
-import org.opencv.core.Point;
 import org.opencv.imgproc.Imgproc;
 
+// Used the following website for help
 // https://www.learnopencv.com/histogram-of-oriented-gradients/
 public class HOG {
   private static int _cellSize = 8;
@@ -14,21 +14,18 @@ public class HOG {
     double total = 0;
     
     if(hog1.length != hog2.length) {
-      System.out.println("hog totals are different.");
       return -1;
     }
-    
-    // Fill labeled objects with random colors
     
     for(int i = 0; i < hog1.length; i++) {
       total += Math.pow((hog1[i] - hog2[i]), 2);
     }
     
-    //total = Math.sqrt(total);
-    
     return total;
   }
   
+  // Resizes the image to a certain size before calculating HOG so try and lower chance of
+  // Odd fonts messing it up
   public static double[] createFixedSize(Mat mat, int newWidth, int newHeight) {
     double[] array;
     double whRatio = (double)mat.width() / (double)mat.height();
@@ -49,10 +46,6 @@ public class HOG {
     
     _cellWidth = (int) Math.floor(mat.cols() / _cellSize);
     _cellHeight = (int) Math.floor(mat.rows() / _cellSize);
-    
-    // [TODO] Need to fix my function
-    /*gradXMat = Filter.gradientX(grayMat);
-    gradYMat = Filter.gradientY(grayMat);*/
 
     Imgproc.Sobel(mat, gradXMat, CvType.CV_32F, 1, 0);
     Imgproc.Sobel(mat, gradYMat, CvType.CV_32F, 0, 1);

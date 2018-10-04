@@ -6,27 +6,26 @@ import org.opencv.core.CvType;
 import org.opencv.core.Mat;
 import org.opencv.core.Point;
 
-/**
- * @author David
- *
+/*
+ * Used to generate blobs using connected components
  */
 public class ConnectedComponents {
   private HashMap<Integer, ConnectedComponentsBlob> _connList;
-  private Mat _img;
+  private Mat _mat;
   private Mat _blobMat;
   private TreeSet<Integer> _lowestLabelQueue;
   
-  public ConnectedComponents(Mat img) {
-    _img = img;
+  public ConnectedComponents(Mat mat) {
+    _mat = mat;
   }
   
-  public ConnectedComponents(Mat img, Mat mask) {
-    _img = Mat.zeros(img.size(), CvType.CV_8U);
-    img.copyTo(_img, mask);
+  public ConnectedComponents(Mat mat, Mat mask) {
+    _mat = Mat.zeros(mat.size(), CvType.CV_8U);
+    mat.copyTo(_mat, mask);
   }
   
   private void addPixel(Point pos, int label) {
-    ConnectedComponentsBlob posSet = _connList.getOrDefault(label, new ConnectedComponentsBlob(_img));
+    ConnectedComponentsBlob posSet = _connList.getOrDefault(label, new ConnectedComponentsBlob(_mat));
     
     posSet.add(pos);
     
@@ -50,8 +49,8 @@ public class ConnectedComponents {
     int smallestLabel;
     int largerLabel;
     
-    ConnectedComponentsBlob currPosSet = _connList.getOrDefault(currLabel, new ConnectedComponentsBlob(_img));
-    ConnectedComponentsBlob foundPosSet = _connList.getOrDefault(foundLabel, new ConnectedComponentsBlob(_img));
+    ConnectedComponentsBlob currPosSet = _connList.getOrDefault(currLabel, new ConnectedComponentsBlob(_mat));
+    ConnectedComponentsBlob foundPosSet = _connList.getOrDefault(foundLabel, new ConnectedComponentsBlob(_mat));
     
     if(foundLabel < currLabel) {
       smallestLabel = foundLabel;
@@ -85,18 +84,13 @@ public class ConnectedComponents {
   
   /**
    * Uses 1 as the threshold, meaning if the pixel is not black
-   * 
-   * @param img Should be a Mat where each object is separated eg threshold
-   * @return
    */
   public Mat generate() {
     return generate(1);
   }
   
   /**
-   * @param img Should be a Mat where each object is separated eg threshold
    * @param threshold at what value should a pixel be considered
-   * @return
    */
   public Mat generate(int threshold) {
     int latestLabel = 1;
@@ -104,10 +98,10 @@ public class ConnectedComponents {
     _connList = new HashMap<Integer, ConnectedComponentsBlob>();
     _lowestLabelQueue = new TreeSet<Integer>();
     
-    _blobMat = Mat.zeros(_img.size(), CvType.CV_16U);
+    _blobMat = Mat.zeros(_mat.size(), CvType.CV_16U);
     
-    for(int row = 0; row < _img.rows(); row++) {
-      for(int col = 0; col < _img.cols(); col++) {
+    for(int row = 0; row < _mat.rows(); row++) {
+      for(int col = 0; col < _mat.cols(); col++) {
         boolean connectionFound = false;
         
         int currLabel;
@@ -119,24 +113,22 @@ public class ConnectedComponents {
           currLabel = _lowestLabelQueue.pollFirst();
         }
         
-        if(currLabel == 2) {
-          System.out.print(""); 
-        }
-
-        // Threshold so that if watershed is implemented then it can be used
-        if(_img.get(row, col)[0] >= threshold) {
+        // Threshold so that if watershed is implemented then it can be used(Spoiler; it wasn't)
+        if(_mat.get(row, col)[0] >= threshold) {
           // For each 8-way connectivity pixel
           // Top row
           if(row > 0) {
-            int leftMostCol = (col == 0) ? 0 : -1;  // if on first col then don't check col-1 for connected
-            int rightMostCol = (col == _img.cols()-1) ? 0 : 1;
+            int leftMostCol = (col == 0) ? 0 : -1;  // if on first column then don't check col-1 for connected
+            int rightMostCol = (col == _mat.cols()-1) ? 0 : 1;
             
             for(int conCol = leftMostCol; conCol <= rightMostCol; conCol++) {
               foundLabel = (int) _blobMat.get(row-1, col + conCol)[0];
               
               if(foundLabel > 0 && foundLabel != currLabel) {
                 connectionFound = true;
-                currLabel = merge(currLabel, foundLabel);  // Combine lists using the lower label number, This pixel is also connected to another blob, so use this label for now    
+                
+                // Combine lists using the lower label number, This pixel is also connected to another blob, so use this label for now
+                currLabel = merge(currLabel, foundLabel);   
               }
             }
           }
@@ -147,7 +139,9 @@ public class ConnectedComponents {
             
             if(foundLabel > 0 && foundLabel != currLabel) {
               connectionFound = true;
-              currLabel = merge(currLabel, foundLabel);  // Combine lists using the lower label number, This pixel is also connected to another blob, so use this label for now
+              
+              // Combine lists using the lower label number, This pixel is also connected to another blob, so use this label for now
+              currLabel = merge(currLabel, foundLabel);  
             }
           }
           

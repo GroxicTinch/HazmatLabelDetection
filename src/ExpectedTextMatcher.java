@@ -1,46 +1,52 @@
+import java.util.ArrayList;
 
 public class ExpectedTextMatcher {
-  private static final String[] _expectedStrings = {
-                                  "(none)",
-                                  "CORROSIVE",
-                                  "COMBUSTIBLE",
-                                  "DANGEROUS WHEN WET",
-                                  "EXPLOSIVE",
-                                  "FLAMMABLE",
-                                  "FLAMMABLE GAS",
-                                  "FLAMMABLE LIQUID",
-                                  "FUEL OIL",
-                                  "GASOLINE",
-                                  "INHALATION HAZARD",
-                                  "NON-FLAMMABLE GAS",
-                                  "ORGANIC PEROXIDE",
-                                  "OXIDIZER",
-                                  "OXYGEN",
-                                  "POISON",
-                                  "RADIOACTIVE",
-                                  "RADIOACTIVE I",
-                                  "RADIOACTIVE II",
-                                  "RADIOACTIVE III",
-                                  "SPONTANEOUSLY COMBUSTIBLE",
-                                  "TOXIC"
-                                  };
+  private static ArrayList<String> _expectedStrings = new ArrayList<String>();
   
+  private static boolean _isSetup = false;
+  
+  /*
+   * Takes in one string which is the needle, and searches the _expectedStrings for the closest match
+   * using the Levenshtein algorithm
+   */
   public static String match(String needle) {
+    if(!_isSetup) {
+      setUp();
+    }
+    
     int minDistance = -1;
     String matchingString = "";
     
     Levenshtein lev = new Levenshtein(needle);
     
-    
-    for(int i = 0; i < _expectedStrings.length; i++) {
-      int distance = lev.findDistance(_expectedStrings[i]);
+    for(String expected : _expectedStrings) {
+      int distance = lev.findDistance(expected);
       
       if(distance < minDistance || minDistance == -1) {
         minDistance = distance;
-        matchingString = _expectedStrings[i];
+        matchingString = expected;
       }
     }
     
     return matchingString;
+  }
+  
+  public static void setUp() {
+    try {
+      _expectedStrings = Utils.loadStringList("./Data/ExpectedTexts", "txt");
+    } catch (MPException e) {
+      System.out.println("./Data/ExpectedTexts.txt was not found\n"
+                       + "as a result all strings will be matched to (none)");
+    }
+    
+    _isSetup = true;
+  }
+  
+  public static ArrayList<String> getExpectedStrings() {
+    if(!_isSetup) {
+      setUp();
+    }
+    
+    return _expectedStrings;
   }
 }

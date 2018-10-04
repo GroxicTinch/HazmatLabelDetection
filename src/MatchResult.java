@@ -1,8 +1,8 @@
-import org.opencv.core.Rect;
-
+/*
+ * Used to easily store\return what template\ocr matches and the weight that it does
+ */
 public class MatchResult {
   private String _name;
-  private Rect _rect;
   private double _result;
   
   public MatchResult() {
@@ -14,9 +14,8 @@ public class MatchResult {
     _result = 0;
   }
 
-  public MatchResult(String name, Rect rect, double result) {
+  public MatchResult(String name, double result) {
     _name = name;
-    _rect = rect;
     _result = result;
   }
   
@@ -24,10 +23,6 @@ public class MatchResult {
   // Getters
   public String getName() {
     return _name;
-  }
-
-  public Rect getRect() {
-    return _rect;
   }
 
   public double getResult() {
@@ -38,10 +33,6 @@ public class MatchResult {
   // Setters
   public void setName(String name) {
     _name = name;
-  }
-  
-  public void setRect(Rect rect) {
-    _rect = rect;
   }
 
   public void setResult(double result) {

@@ -1,6 +1,0 @@
-Prac1
-Best method of detecting if image is rotated
-
-Prac2
-Running gaussian kernal creates incorrect
-PixelTransform on contrast and brightness?

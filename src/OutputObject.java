@@ -1,4 +1,6 @@
-
+/*
+ * Used to keep all of the required output strings in one place
+ */
 public class OutputObject {
   private String _filename;
   

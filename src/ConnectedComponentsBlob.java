@@ -1,7 +1,5 @@
 import java.util.ArrayList;
 import java.util.HashSet;
-import java.util.List;
-
 import org.opencv.core.CvType;
 import org.opencv.core.Mat;
 import org.opencv.core.MatOfPoint;
@@ -9,21 +7,29 @@ import org.opencv.core.Point;
 import org.opencv.imgproc.Imgproc;
 
 public class ConnectedComponentsBlob {
+  // A list of every pixel this blob is made of
   private HashSet<Point> _pixelList;
-  private Point[] _corners;
   
+  // Top left
   private int _x;
   private int _y;
+  
+  // Bottom Right
   private int _x2;
   private int _y2;
   
+  // blob is actually a mat the size of the original image it was taken from
+  // this was used to easily locate where the blob was found
   private Mat _mat;
+  
+  // Width and Height are of the full mat
   private int _matWidth;
   private int _matHeight;
   
+  // We only want to generate the Mat once until a pixel should be added, then alter it
   private boolean generateMat;
-  //[TODO] Blob Boundry Extraction
   
+  //[TODO] Blob Boundry Extraction
   public ConnectedComponentsBlob(Mat img) {
     _pixelList = new HashSet<Point>();
     
@@ -78,24 +84,6 @@ public class ConnectedComponentsBlob {
       return new Point(_x2, _y2);
   }
   
-  public Point[] getCornersHarris() {
-    if(_corners == null) {
-      Mat img = Filter.borderConstant(getMat(), 0);
-      _corners = Filter.cornersHarris(img);
-    }
-    
-    return _corners;
-  }
-  
-  public Point[] getCornersShiTomasi() {
-    if(_corners == null) {
-      Mat img = Filter.borderConstant(getMat(), 0);
-      _corners = Filter.cornersShiTomasi(img);
-    }
-    
-    return _corners;
-  }
-  
   public Mat getMat() {
     return getMatFull().submat(_y, _y2+1, _x, _x2+1);
   }
@@ -112,11 +100,6 @@ public class ConnectedComponentsBlob {
     }
     
     return _mat;
-  }
-  
-  // [TODO] fix, currently only accurate for rectangles\squares
-  public int getPerimeter() {
-    return (_matWidth + _matHeight) * 2;
   }
   
   public HashSet<Point> getPixels() {
@@ -144,6 +127,8 @@ public class ConnectedComponentsBlob {
     _pixelList.add(pos);
   }
   
+  // find the contours of the blob using Imgproc.findContours
+  // assumes the blob is the whole mat
   public ArrayList<MatOfPoint> findApproxContours() {
     return findContours(Imgproc.CHAIN_APPROX_SIMPLE);
   }
@@ -161,6 +146,9 @@ public class ConnectedComponentsBlob {
     return contours;
   }
   
+  // find the contours of the blob using Imgproc.findContours
+  // uses the full mat size, useful for showing where something was found without
+  // having to pass around point data as well
   public ArrayList<MatOfPoint> findApproxContoursFull() {
     return findContoursFull(Imgproc.CHAIN_APPROX_SIMPLE);
   }
@@ -177,13 +165,7 @@ public class ConnectedComponentsBlob {
     
     return contours;
   }
-  
-  public void generateBoundaryLists() {
-    // Get the mat, add a border of 0 so that edge detection gets edge pixels, then perform sobel filter
-    Mat edgeMat = Filter.laplacian(Filter.borderConstant(getMat(), 0));
-    // [TODO] get edge Mats
-  }
-  
+
   // Casting because it rounds the number without it
   public double ratioForegroundBackground() {
     return (double)size() / ((double)getWidth() * (double)getHeight());

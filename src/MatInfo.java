@@ -2,16 +2,15 @@ import java.util.ArrayList;
 import java.util.List;
 
 import org.opencv.core.Core;
-import org.opencv.core.CvType;
 import org.opencv.core.Mat;
 import org.opencv.core.MatOfFloat;
 import org.opencv.core.MatOfInt;
-import org.opencv.core.Point;
-import org.opencv.core.Rect;
-import org.opencv.core.Scalar;
 import org.opencv.core.Core.MinMaxLocResult;
 import org.opencv.imgproc.Imgproc;
 
+/*
+ * Used for functions that get information about the Mat without altering it
+ */
 public class MatInfo { 
   public static String getMainColor(Mat img) {
     Mat mask = new Mat();
@@ -23,10 +22,11 @@ public class MatInfo {
     int brightnessThreshold = 76; // approx 30%
     
     // Hue goes from 0-180, if we allow 5 for each group it should give us an accurate enough color guess
+    // 180 / 5 = 36
     int binsH = 36;
     int binsSV = 255;
     
-    String mainColor = "ERROR";
+    String mainColor = "";
     Mat hsvImg = new Mat();
     Mat histH = new Mat();
     Mat histS = new Mat();
@@ -45,6 +45,7 @@ public class MatInfo {
     int maxBinV = -1;
     double maxV = 0;
     
+    // Was not able to find a way to convert straight from Gray to HSV(because H wouldn't exist)
     if(img.channels() == 1) {
       Imgproc.cvtColor(img, hsvImg, Imgproc.COLOR_GRAY2BGR);
       Imgproc.cvtColor(hsvImg, hsvImg, Imgproc.COLOR_BGR2HSV);
@@ -55,25 +56,13 @@ public class MatInfo {
     // We need to split the mat into the different colour channels BGR 
     List<Mat> hsv_planes = new ArrayList<Mat>();
     Core.split(hsvImg, hsv_planes);
-    
-    //[TODO] Create a mask
-    
+
+    // Place the Hue, Saturation and Value into bins
     Imgproc.calcHist(hsv_planes, new MatOfInt(0), mask, histH, histSizeH, rangesH);
     Imgproc.calcHist(hsv_planes, new MatOfInt(1), mask, histS, histSizeSV, rangesSV);
     Imgproc.calcHist(hsv_planes, new MatOfInt(2), mask, histV, histSizeSV, rangesSV);
     
-    /*if(!histH.empty()) {
-      return histH.dump();
-    }*/
-    
-    /*if(!histS.empty()) {
-      return histS.dump();
-    }*/
-    
-    /*if(!histV.empty()) {
-      return histV.dump();
-    }*/
-    
+    // Find the most used Hue range
     for(int i = 0; i < binsH; i++) {
       double countH = histH.get(i, 0)[0];
       
@@ -83,6 +72,7 @@ public class MatInfo {
       }
     }
     
+    // Find the most used Saturation and Value, can be done together due to same bin sizes
     for(int i = 0; i <= 255; i++) {
       double countS = histS.get(i, 0)[0];
       double countV = histV.get(i, 0)[0];
@@ -120,7 +110,7 @@ public class MatInfo {
           mainColor = "Blue";
         } else if(maxBinH >= 28 && maxBinH <= 31) {
           // H between 140-160
-          mainColor = "Pink"; // This shouldn't happen in the assignment...
+          mainColor = "Pink"; // This shouldn't happen in the assignment but thought I would add it anyway
         }
       } else {
         // It is probably white
@@ -135,19 +125,18 @@ public class MatInfo {
   }
   
   public static MatchResult templateMatch(Mat mat, Mat templ) {
-    // Imgproc.TM_CCOEFF finds the 8 instead of the B
-    // Imgproc.TM_CCOEFF_NORMED finds the 8 instead of the B
-    // Imgproc.TM_CCORR finds the headlight..
-    // Imgproc.TM_CCORR_NORMED finds the 8 instead of the B
-    // Imgproc.TM_SQDIFF finds the road...
-    // Imgproc.TM_SQDIFF_NORMED found best in this case
+    // Imgproc.TM_CCOEFF
+    // Imgproc.TM_CCOEFF_NORMED
+    // Imgproc.TM_CCORR
+    // Imgproc.TM_CCORR_NORMED
+    // Imgproc.TM_SQDIFF
+    // Imgproc.TM_SQDIFF_NORMED
     return templateMatch(mat, templ, Imgproc.TM_SQDIFF_NORMED);
   }
   
   public static MatchResult templateMatch(Mat mat, Mat templ, int matchMethod) {
     MatchResult tmr = new MatchResult();
     Mat result = new Mat();
-    Point matchLoc;
     Double percent;
     
     Imgproc.matchTemplate(mat, templ, result, matchMethod);
@@ -155,14 +144,11 @@ public class MatInfo {
     MinMaxLocResult mmlr = Core.minMaxLoc(result);
     
     if(matchMethod == Imgproc.TM_SQDIFF || matchMethod == Imgproc.TM_SQDIFF_NORMED) {
-      matchLoc = mmlr.minLoc;
       percent = 1-mmlr.minVal;
     } else {
-      matchLoc = mmlr.maxLoc;
       percent = mmlr.maxVal;
     }
     
-    tmr.setRect(new Rect(matchLoc, new Point(matchLoc.x + templ.cols(), matchLoc.y + templ.rows())));
     tmr.setResult(percent);
 
     return tmr;

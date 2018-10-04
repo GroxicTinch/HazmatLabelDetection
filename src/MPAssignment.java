@@ -1,16 +1,13 @@
 import java.awt.FlowLayout;
 import java.awt.image.BufferedImage;
 import java.io.BufferedReader;
-import java.io.BufferedWriter;
 import java.io.ByteArrayInputStream;
 import java.io.File;
 import java.io.FileReader;
-import java.io.FileWriter;
 import java.io.IOException;
 import java.io.InputStream;
 import java.util.ArrayList;
 import java.util.Arrays;
-import java.util.Iterator;
 import java.util.Scanner;
 import java.util.TreeSet;
 
@@ -20,38 +17,23 @@ import javax.swing.JFrame;
 import javax.swing.JLabel;
 
 import org.opencv.core.Core;
-import org.opencv.core.CvType;
 import org.opencv.core.Mat;
 import org.opencv.core.MatOfByte;
-import org.opencv.core.MatOfKeyPoint;
-import org.opencv.core.MatOfPoint;
-import org.opencv.core.MatOfRect;
 import org.opencv.core.Point;
 import org.opencv.core.Rect;
-import org.opencv.core.Scalar;
-import org.opencv.features2d.FeatureDetector;
 import org.opencv.imgcodecs.Imgcodecs;
 import org.opencv.imgproc.Imgproc;
-import org.opencv.objdetect.HOGDescriptor;
 
 /**
  *
  * @author David Hoy
  */
 
-public class MPAssignment {
-  static int _winX = 0;
-  static int _winY = 0;
-  static int _winW = 0;
-  static int _winH = 0;
-  
+public class MPAssignment {  
   static{ System.loadLibrary(Core.NATIVE_LIBRARY_NAME); }
   
   static ArrayList<JFrame> _frameList = new ArrayList<JFrame>();
-  
-  /**
-  * @param args the command line arguments
-  */
+
   public static void main(String args[]) {
   	boolean foundImage = false;
     if(args.length == 0) {
@@ -72,72 +54,47 @@ public class MPAssignment {
               	foundImage = true;	// Check to see if any images have been found at all
               }
             } catch (IOException e) {
-              println("Skipping file due to issue opening: " + file.getName());
+              System.out.println("Skipping file due to issue opening: " + file.getName());
             } catch (MPException e) {
-              println(e.toString());
+              System.out.println(e.toString());
             }
           }
         }
         
         if(!foundImage) {
-          println("No images found in given directory:\n" + args[0]);
+          System.out.println("No images found in given directory:\n" + args[0]);
         }
         
       } else if(dir.isFile()){
         try {
           processFile(dir);
         } catch (IOException e) {
-          println("Skipping file due to issue opening: " + dir.getName());
+          System.out.println("Skipping file due to issue opening: " + dir.getName());
         } catch (MPException e) {
-          println(e.toString());
+          System.out.println(e.toString());
         }
       } else {
-        println("The directory " + dir.toString() + " does not exist");
+        System.out.println("The directory " + dir.toString() + " does not exist");
       }
     }
   }
-   
-  /* [Q] Prac 5 "Reshape the digit images and their averages to row vectors of size 1x200"
-   */ 
-
+  
   static boolean processFile(File file) throws IOException, MPException {
     ImageFileObject imgFO = new ImageFileObject(file);
     
+    // If the file is not an image we do not want to try and process it further
     if(!imgFO.isImage()) {
     	return false;
     }
-	  
-	  /* 
-	   * [TODO] Ensure files are read alphabetically
-	   * 
-	   * [TODO] Colour of top half background
-	   * [TODO] Colour of bottom half background
-	   * [TODO] Class Number
-	   * [TODO] Other text
-	   * [TODO] Symbol
-	   * 
-	   * [Ignore] Labels with background pattern
-	   * [Ignore] Labels with explanatory text(text will never be smaller or denser then in figure 1)
-	   * [Ignore] Labels with multiple class numbers or with non-numeric chars
-	   */
-	  
-	  /* Subtasks needing to be fixed
-	   * [TODO] Fix Blobs to find holes
-	   * [TODO] Blob Boundry Extraction
-	   * [TODO] Blob Chords
-	   * [TODO] Prac4 Ex3 Histogram Feature Extraction
-	   */
-	  
+    
     OutputObject outputObj = new OutputObject(imgFO.getFilename());
-    Mat outMat = imgFO.getMat().clone();
     
 	  /* 
-	   * [TODO] Create proper way to create masks
+	   * [TODO] Create different way to create masks *********
 	   */
-    
-	  Mat mask = Imgcodecs.imread("./MasksAndTemplates/MaskTemp.png");
+	  Mat mask = Imgcodecs.imread("./Data/Masks/Mask.png");
     Imgproc.cvtColor(mask, mask, Imgproc.COLOR_BGR2GRAY);
-    // ******************************************************************************************
+    //******************************************************
 
     TreeSet<CharAndLoc> classNumList = new TreeSet<CharAndLoc>();
     TreeSet<CharAndLoc> textList = new TreeSet<CharAndLoc>();
@@ -155,18 +112,29 @@ public class MPAssignment {
 	    }
 	    
 	    /* [Notes]
+	     * The following are for all occurrences in the sample data(and hopefully all test data)
 	     * Class Number is located 0.70:350 from top of the sign and ends at 0.90:450, 0.38:190 from left start til 0.63:315
 	     * Text T 0.38:190, B 0.66:330, L 0.12:60, R 0.89:445
 	     * Symbol is located at top 0.04:20, bottom 0.49:245, left 0.21:105, right 0.78:390
+	     * 
+	     * stretching boxes to try and prevent dropped blobs, shouldn't really need to clip sides
 	     */
-	    Rect classNumLoc = new Rect(new Point(signW * 0.38, signH * 0.70), new Point(signW * 0.63, signH * 0.90));
-      Rect classTextLoc = new Rect(new Point(signW * 0.12, signH * 0.38), new Point(signW * 0.89, signH * 0.66));
-	    Rect classSymbolLoc = new Rect(new Point(signW * 0.21, signH * 0.04), new Point(signW * 0.78, signH * 0.49));
+      
+      int classNumTop = (int) (signH * 0.70);
+      int classNumBottom = (int) (signH);
+      
+      int classTextTop = (int) (signH * 0.38);
+      int classTextBottom = (int) (signH * 0.67);
+      
+      int classSymbolTop = (int) (0);
+      int classSymbolBottom = (int) (signH * 0.49);
+	    
+	    Rect classNumLoc = new Rect(new Point(0, classNumTop), new Point(signW, classNumBottom));
+      Rect classTextLoc = new Rect(new Point(0, classTextTop), new Point(signW, classTextBottom));
+      Rect classSymbolLoc = new Rect(new Point(0, classSymbolTop), new Point(signW, classSymbolBottom));
 
 	    if(classNumLoc.contains(connBlob[i].tl())) {
 	      // It is most likely the class identification number
-	      Imgproc.drawContours(outMat, connBlob[i].findAbsContoursFull(), 0, new Scalar(0,255,0), 2);
-        
         String foundClassNum = findNumbers(connBlob[i]);
         if(!foundClassNum.equals("Unknown")) {
           if(foundClassNum.equals("dot")) {
@@ -174,9 +142,8 @@ public class MPAssignment {
           }
           classNumList.add(new CharAndLoc(foundClassNum.charAt(0), connBlob[i].tl(), connBlob[i].br()));
         }
-	    } else if(classTextLoc.contains(connBlob[i].tl()) && classTextLoc.contains(connBlob[i].br())) {      
-        Imgproc.drawContours(outMat, connBlob[i].findAbsContoursFull(), 0, new Scalar(255,255,0), 2);
-        
+	    } else if(classTextLoc.contains(connBlob[i].tl()) && classTextLoc.contains(connBlob[i].br())) {       
+	      // It is most likely the descriptive text
         String foundText = findCharacters(connBlob[i]);
         if(!foundText.equals("Unknown")) {
           if(foundText.equals("dot")) {
@@ -185,12 +152,10 @@ public class MPAssignment {
           textList.add(new CharAndLoc(foundText.charAt(0), connBlob[i].tl(), connBlob[i].br()));
         }
 	    } else if(classSymbolLoc.contains(connBlob[i].tl()) && classSymbolLoc.contains(connBlob[i].br())) {
+	      // It is most likely the class symbol
 	      MatchResult symbolTmrTmp = new MatchResult();
-	      
-        // It is most likely the class symbol
-        Imgproc.drawContours(outMat, connBlob[i].findAbsContoursFull(), 0, new Scalar(0,255,255), 2);
         
-        // If we have a good result then ignore the rest of the shapes
+        // If we have a good result then ignore the rest of the templates
         if(symbolTmr.getResult() <= 0.9) {
           symbolTmrTmp = findSymbol(connBlob[i].getMat());
           
@@ -200,26 +165,28 @@ public class MPAssignment {
             outputObj.symbol = symbolTmr.getName();
           }
         }
-	    } else if(connBlob[i].getY2() < signH/2) {
-	      // It is in the top half, which means it could be Symbol\Explosive number or descriptive text,
-	      // Sometimes picks up bounding box if it is a different colour to bottom half bounding box
-	      Imgproc.drawContours(outMat, connBlob[i].findAbsContoursFull(), 0, new Scalar(255,0,0), 2);
-	    } else {
-	      //Imgproc.drawContours(outMat, connBlob[i].findAbsContoursFull(), 0, new Scalar(0,0,255), 2);
 	    }
 	  }
 	  
+	  /* Get Class number */
 	  outputObj.classNum = convertCharAndLocListToString(classNumList);
 	  
+	  /* Get descriptive text */
 	  String foundText = convertCharAndLocListToString(textList);
-	  outputObj.otherText = ExpectedTextMatcher.match(foundText);
+	  
+	  if(foundText == "(none)") {
+	    outputObj.otherText = foundText;
+	  } else {	    
+	    outputObj.otherText = ExpectedTextMatcher.match(foundText);
+	  }
 	  
 	  /* Get Colors */
 	  findSignHalfColors(imgFO.getMat(), mask, outputObj);
 	  String output = outputObj.toString() + "\n";
 	  System.out.println(output);
 
-	  // Automatically check if output is correct, if it isnt then pause
+	  /* Debugging code, ideally you should not be seeing this */
+	  // Automatically check if output is correct, if it isn't then pause
 	  BufferedReader br = new BufferedReader(new FileReader("SampleData/expectedResults/" + imgFO.getFilename() + ".txt"));
 	  
 	  String[] outputStrings = output.split("\n");
@@ -237,9 +204,9 @@ public class MPAssignment {
 	    if(!line.equals(outputStrings[i])) {
 	      // Not sure if the actual number should be printed or the phrase "A number" so assuming the easiest of the 2
 	      if(outputStrings[i].endsWith("A number")) {
-	        println("Assume its okay: \"" + outputStrings[i] + "\" != \"" + line + "\"\n\n");
+	        System.out.println("Assume its okay: \"" + outputStrings[i] + "\" != \"" + line + "\"\n\n");
 	      } else if(!outputStrings[i].endsWith("Not Implemented")  && !outputStrings[i].equals(line)) {
-	        println("MISMATCH:    \"" + outputStrings[i] + "\" != \"" + line + "\"  found: " + foundText + "\n\n");
+	        System.out.println("MISMATCH:    \"" + outputStrings[i] + "\" != \"" + line + "\"  found: " + foundText + "\n\n");
 
 	        shouldPause = true;
 	      }
@@ -249,7 +216,7 @@ public class MPAssignment {
 	  }
 	  
 	  if(shouldPause) {
-	    winShowRight("Output " + imgFO.getFilename(), outMat);
+	    winShow("",imgFO.getMat());
 	    winWait();
 	  }
 	  
@@ -257,7 +224,7 @@ public class MPAssignment {
   }
   
   /*
-   * [TODO] Fix issue with "Dangerous When Wet" sign
+   * [TODO] fix issue: "Dangerous When Wet" sign finds "Dangerousw wet"
    */
   private static String convertCharAndLocListToString(TreeSet<CharAndLoc> charLocList) {
     String returnString;
@@ -297,7 +264,7 @@ public class MPAssignment {
     mr.setResult(1.0);
     double[] hogArray = HOG.createFixedSize(connBlob.getMat(), 30, 30);
     
-    File dir = new File("./MasksAndTemplates/HOGs/Characters");
+    File dir = new File("./Data/HOGs/Characters");
     File[] dirList = dir.listFiles();
 
     if(dir.isDirectory()) { 
@@ -309,7 +276,7 @@ public class MPAssignment {
             }
             String filename = file.getName();
             
-            double[] charHogArray = Utils.load("./MasksAndTemplates/HOGs/Characters/" + filename);
+            double[] charHogArray = Utils.loadDoubleArray("./Data/HOGs/Characters/" + filename);
             double distance = HOG.calcEuclideanDist(hogArray, charHogArray);
 
             if(mr.getResult() > distance) {
@@ -348,7 +315,7 @@ public class MPAssignment {
     
     boolean gotGoodResult = false;
     
-    File dir = new File("./MasksAndTemplates/NumTemplates");
+    File dir = new File("./Data/NumTemplates");
     File[] dirList = dir.listFiles();
 
     if(dir.isDirectory()) { 
@@ -375,8 +342,6 @@ public class MPAssignment {
               mat = Filter.resizeToPixel(mat, templ.getWidth(), templ.getHeight());
 
               tmr = MatInfo.templateMatch(mat, templMat,Imgproc.TM_CCORR_NORMED);
-              
-              // println(tmr.getPercent() + " chance to be " + templ.getName());
               
               if(finalTmr.getResult() < tmr.getResult()) {
                 String name = templ.getName();
@@ -444,13 +409,11 @@ public class MPAssignment {
     int newHeight = mat.rows() / 2;
     Mat topMask = Filter.crop(mask, new Point(0,0), mat.cols(), newHeight);
     Mat bottomMask = Filter.crop(mask, new Point(0, newHeight), mat.cols(), newHeight);
-
-    //topMask = Imgcodecs.imread("./SampleData/Mask/MaskTopTempSmaller.png");
     
     /* placard-7-radioactive.png was identified wrong, saw top as white instead of yellow
-     * [TODO] Stop using mask that this benefits from
+     * [TODO] Stop using mask that works around this
      */
-    topMask = Imgcodecs.imread("./MasksAndTemplates/MaskTopTempSmallerFURadio.png");
+    topMask = Imgcodecs.imread("./Data/Masks/MaskTopSmallerRadio.png");
     Imgproc.cvtColor(topMask, topMask, Imgproc.COLOR_BGR2GRAY);
     // **************************************************************
     
@@ -471,7 +434,7 @@ public class MPAssignment {
     
     boolean gotGoodResult = false;
     
-    File dir = new File("./MasksAndTemplates/SymbolTemplates");
+    File dir = new File("./Data/SymbolTemplates");
     File[] dirList = dir.listFiles();
 
     if(dir.isDirectory()) { 
@@ -529,100 +492,15 @@ public class MPAssignment {
     return finalTmr;
   }
   
-  @SuppressWarnings("unused")
-  private static void PRACWORK(File file, ImageFileObject imgFO, ImageFileObject origImgFO) {
-    ConnectedComponentsBlob[] connBlob = findBlobs(Imgcodecs.imread("Output/ABC2.png"), new Mat());
-    
-    for(int i = 0; i < connBlob.length; i++) {      
-      if(connBlob[i].getWidth() < 10 && connBlob[i].getHeight() < 10) {
-        double[] hogArray = HOG.createFixedSize(connBlob[i].getMat(), 20, 20);
-
-        Mat curr = new Mat();
-        
-        Imgcodecs.imread("Output/ABC2.png").copyTo(curr);
-        // It is most likely the text
-        Imgproc.drawContours(curr, connBlob[i].findAbsContoursFull(), 0, new Scalar(0,0,255), 2);
-        
-        try {
-          if(hogArray.length > 0) {
-            Utils.saveAs(hogArray, "./Output/" + connBlob[i].hashCode(), "hog");
-          }
-        } catch (MPException e1) {
-          // TODO Auto-generated catch block
-          e1.printStackTrace();
-        }
-      }
-    }
-  }
-  
-  static void println(String message) {
-    System.out.println(message);
-  }
-  
   static JFrame winShow(String title , Mat img) {
-    return winShow(title, img, 0, 0);
-  }
-  
-  static JFrame winShow(String title , Mat img, int x, int y) {  
-    _winX = x;
-    _winY = y;
-    _winW = img.width() + 8; // Offset is for windows 10 border(on my pc at least)
-    _winH = img.height() + 34;
-    
-    /* HighGui calls with third party code since downgrading OpenCV removed gui functionality
-    HighGui.imshow(title, img);
-    HighGui.moveWindow(title, x, y);
-    */
-    
-    return imshow(title, img, x, y);
-  }
-  
-  static JFrame winShowRight(String title , Mat img) {
-    _winX = _winX + _winW;
-    _winW = img.width() + 8; // Offset is for windows 10 border(on my pc at least)
-    _winH = img.height() + 34;
-        
-    return winShow(title, img, _winX, _winY);
-  }
-  
-  static JFrame winShowLeft(String title , Mat img) {
-    _winX = _winX - img.width() - 8;
-    _winW = img.width() + 8; // Offset is for windows 10 border(on my pc at least)
-    _winH = img.height() + 34;
-
-    return winShow(title, img, _winX, _winY);
-  }
-  
-  static JFrame winShowBelow(String title , Mat img) {
-    _winY = _winY + _winH;
-    _winW = img.width() + 8; // Offset is for windows 10 border(on my pc at least)
-    _winH = img.height() + 34;
-        
-    return winShow(title, img, _winX, _winY);
-  }
-  
-  static JFrame winShowAbove(String title , Mat img) {
-    _winY = _winY - img.height() - 34;
-    _winW = img.width() + 8; // Offset is for windows 10 border(on my pc at least)
-    _winH = img.height() + 34;
-        
-    return winShow(title, img, _winX, _winY);
+    return imshow(title, img);
   }
   
   static void winWait() {
-    _winX = 0;
-    _winY = 0;
-    _winW = 0;
-    _winH = 0;
-    
     Scanner input = new Scanner(System.in);
     input.nextLine();
     
     closeWins();
-
-    /* HighGui calls with third party code since downgrading OpenCV removed gui functionality
-    HighGui.waitKey();
-    */
   }
   
   static void closeWins() {
@@ -634,7 +512,7 @@ public class MPAssignment {
   }
   
   // [TODO] REMOVE, THIS IS THIRD PARTY CODE USED TO DEBUG AND DISPLAY IMAGES
-  public static JFrame imshow(String title, Mat src, int x, int y) {
+  public static JFrame imshow(String title, Mat src) {
     BufferedImage bufImage = null;
     try {
         MatOfByte matOfByte = new MatOfByte();

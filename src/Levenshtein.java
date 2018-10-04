@@ -2,6 +2,7 @@
 public class Levenshtein {
   private String _needle;
 
+  // Used the following web-site as guidance, though there was not much I could change
   // https://en.wikibooks.org/wiki/Algorithm_Implementation/Strings/Levenshtein_distance
   public Levenshtein(String needle) {
     _needle = needle;
