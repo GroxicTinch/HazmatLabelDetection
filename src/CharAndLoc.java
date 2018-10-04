@@ -54,6 +54,6 @@ public class CharAndLoc implements Comparable<CharAndLoc> {
       return 1;
     } 
 
-    return 0;
+    return -1;
   }
 }

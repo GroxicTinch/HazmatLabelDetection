@@ -3,6 +3,7 @@ public class ExpectedTextMatcher {
   private static final String[] _expectedStrings = {
                                   "(none)",
                                   "CORROSIVE",
+                                  "COMBUSTIBLE",
                                   "DANGEROUS WHEN WET",
                                   "EXPLOSIVE",
                                   "FLAMMABLE",
@@ -16,10 +17,10 @@ public class ExpectedTextMatcher {
                                   "OXIDIZER",
                                   "OXYGEN",
                                   "POISON",
-                                  "RATIOACTIVE",
-                                  "RATIOACTIVE I",
-                                  "RATIOACTIVE II",
-                                  "RATIOACTIVE III",
+                                  "RADIOACTIVE",
+                                  "RADIOACTIVE I",
+                                  "RADIOACTIVE II",
+                                  "RADIOACTIVE III",
                                   "SPONTANEOUSLY COMBUSTIBLE",
                                   "TOXIC"
                                   };

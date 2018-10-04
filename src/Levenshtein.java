@@ -2,6 +2,7 @@
 public class Levenshtein {
   private String _needle;
 
+  // https://en.wikibooks.org/wiki/Algorithm_Implementation/Strings/Levenshtein_distance
   public Levenshtein(String needle) {
     _needle = needle;
   }
@@ -34,7 +35,7 @@ public class Levenshtein {
         
         costReplace = cost[ii-1] + isDifferent;
         costIns = cost[ii] + 1;
-        costDel = newCost[ii - 1] + 1;
+        costDel = newCost[ii - 1] + 2;
         
         // We want the lowest Cost
         newCost[ii] = smallest(costReplace, costIns, costDel);

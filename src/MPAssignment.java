@@ -239,7 +239,7 @@ public class MPAssignment {
 	      if(outputStrings[i].endsWith("A number")) {
 	        println("Assume its okay: \"" + outputStrings[i] + "\" != \"" + line + "\"\n\n");
 	      } else if(!outputStrings[i].endsWith("Not Implemented")  && !outputStrings[i].equals(line)) {
-	        println("MISMATCH:    \"" + outputStrings[i] + "\" != \"" + line + "\"\n\n");
+	        println("MISMATCH:    \"" + outputStrings[i] + "\" != \"" + line + "\"  found: " + foundText + "\n\n");
 
 	        shouldPause = true;
 	      }
@@ -411,9 +411,6 @@ public class MPAssignment {
 
     Mat outBlack = Filter.thresholdInv(blackWhite, 30);
     Mat outWhite = Filter.threshold(blackWhite, 160);
-    
-    winShow("", outBlack);
-    winWait();
     
     ConnectedComponents connCompBlack = new ConnectedComponents(outBlack, mask);
     ConnectedComponents connCompWhite = new ConnectedComponents(outWhite, mask);
