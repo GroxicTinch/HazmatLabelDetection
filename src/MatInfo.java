@@ -134,7 +134,7 @@ public class MatInfo {
     return mainColor;
   }
   
-  public static TemplateMatchResult templateMatch(Mat mat, Mat templ) {
+  public static MatchResult templateMatch(Mat mat, Mat templ) {
     // Imgproc.TM_CCOEFF finds the 8 instead of the B
     // Imgproc.TM_CCOEFF_NORMED finds the 8 instead of the B
     // Imgproc.TM_CCORR finds the headlight..
@@ -144,8 +144,8 @@ public class MatInfo {
     return templateMatch(mat, templ, Imgproc.TM_SQDIFF_NORMED);
   }
   
-  public static TemplateMatchResult templateMatch(Mat mat, Mat templ, int matchMethod) {
-    TemplateMatchResult tmr = new TemplateMatchResult();
+  public static MatchResult templateMatch(Mat mat, Mat templ, int matchMethod) {
+    MatchResult tmr = new MatchResult();
     Mat result = new Mat();
     Point matchLoc;
     Double percent;
@@ -163,7 +163,7 @@ public class MatInfo {
     }
     
     tmr.setRect(new Rect(matchLoc, new Point(matchLoc.x + templ.cols(), matchLoc.y + templ.rows())));
-    tmr.setPercent(percent);
+    tmr.setResult(percent);
 
     return tmr;
   }

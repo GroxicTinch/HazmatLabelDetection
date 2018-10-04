@@ -1,11 +1,18 @@
 import java.awt.FlowLayout;
 import java.awt.image.BufferedImage;
+import java.io.BufferedReader;
+import java.io.BufferedWriter;
 import java.io.ByteArrayInputStream;
 import java.io.File;
+import java.io.FileReader;
+import java.io.FileWriter;
 import java.io.IOException;
 import java.io.InputStream;
 import java.util.ArrayList;
+import java.util.Arrays;
+import java.util.Iterator;
 import java.util.Scanner;
+import java.util.TreeSet;
 
 import javax.imageio.ImageIO;
 import javax.swing.ImageIcon;
@@ -25,6 +32,7 @@ import org.opencv.core.Scalar;
 import org.opencv.features2d.FeatureDetector;
 import org.opencv.imgcodecs.Imgcodecs;
 import org.opencv.imgproc.Imgproc;
+import org.opencv.objdetect.HOGDescriptor;
 
 /**
  *
@@ -57,6 +65,7 @@ public class MPAssignment {
 
       if(dir.isDirectory()) { 
         if(dirList != null && dirList.length > 0 ) {
+          Arrays.sort(dirList);
           for(File file : dirList) {
             try {
               if(processFile(file)) {
@@ -87,21 +96,16 @@ public class MPAssignment {
       }
     }
   }
-  
+   
   /* [Q] Prac 5 "Reshape the digit images and their averages to row vectors of size 1x200"
    */ 
 
   static boolean processFile(File file) throws IOException, MPException {
-    ImageFileObject origImgFO = new ImageFileObject(file);
-
-    if(!origImgFO.isImage()) {
+    ImageFileObject imgFO = new ImageFileObject(file);
+    
+    if(!imgFO.isImage()) {
     	return false;
     }
-    
-    OutputObject outputObj = new OutputObject(origImgFO.getFilename());
-	  
-	  ImageFileObject imgFO = origImgFO.copy();
-	  //winShow(origImgFO.getFilename(), origImgFO.getMat());
 	  
 	  /* 
 	   * [TODO] Ensure files are read alphabetically
@@ -123,28 +127,32 @@ public class MPAssignment {
 	   * [TODO] Blob Chords
 	   * [TODO] Prac4 Ex3 Histogram Feature Extraction
 	   */
-	  	  
-	  // Use this when testing so I dont need to remove or add things
-	  if(false) {
-	    PRACWORK(file, imgFO, origImgFO);
-	    return true;
-	  }
 	  
+    OutputObject outputObj = new OutputObject(imgFO.getFilename());
+    Mat outMat = imgFO.getMat().clone();
+    
 	  /* 
 	   * [TODO] Create proper way to create masks
 	   */
+    
 	  Mat mask = Imgcodecs.imread("./MasksAndTemplates/MaskTemp.png");
     Imgproc.cvtColor(mask, mask, Imgproc.COLOR_BGR2GRAY);
     // ******************************************************************************************
 
-    TemplateMatchResult symbolTmr = new TemplateMatchResult();
+    TreeSet<CharAndLoc> classNumList = new TreeSet<CharAndLoc>();
+    TreeSet<CharAndLoc> textList = new TreeSet<CharAndLoc>();
+    MatchResult symbolTmr = new MatchResult();
     
-    ConnectedComponentsBlob[] connBlob = findBlobs(origImgFO.getMat(), mask);
+    ConnectedComponentsBlob[] connBlob = findBlobs(imgFO.getMat(), mask);
+    
+    int signH = imgFO.getHeight();
+    int signW = imgFO.getWidth();
 	  
-	  
-	  for(int i = 0; i < connBlob.length; i++) {
-	    int signH = imgFO.getHeight();
-	    int signW = imgFO.getWidth();
+	  for(int i = 0; i < connBlob.length; i++) {	    
+	    if(connBlob[i].getWidth() < 5 && connBlob[i].getHeight() < 5) {
+	      // It is most likely garbage, discard
+	      continue;
+	    }
 	    
 	    /* [Notes]
 	     * Class Number is located 0.70:350 from top of the sign and ends at 0.90:450, 0.38:190 from left start til 0.63:315
@@ -157,43 +165,244 @@ public class MPAssignment {
 
 	    if(classNumLoc.contains(connBlob[i].tl())) {
 	      // It is most likely the class identification number
-	      Imgproc.drawContours(imgFO.getMat(), connBlob[i].findAbsContoursFull(), 0, new Scalar(0,255,0), 2);
-	      
-	      outputObj.classNum = "Not ready but it has this many corners: " + connBlob[i].getCornersShiTomasi().length;
-	    } else if(classTextLoc.contains(connBlob[i].tl()) && classTextLoc.contains(connBlob[i].br())) {
-	      // It is most likely the text
-        Imgproc.drawContours(imgFO.getMat(), connBlob[i].findAbsContoursFull(), 0, new Scalar(255,255,0), 2);
+	      Imgproc.drawContours(outMat, connBlob[i].findAbsContoursFull(), 0, new Scalar(0,255,0), 2);
+        
+        String foundClassNum = findNumbers(connBlob[i]);
+        if(!foundClassNum.equals("Unknown")) {
+          if(foundClassNum.equals("dot")) {
+            foundClassNum = ".";
+          }
+          classNumList.add(new CharAndLoc(foundClassNum.charAt(0), connBlob[i].tl(), connBlob[i].br()));
+        }
+	    } else if(classTextLoc.contains(connBlob[i].tl()) && classTextLoc.contains(connBlob[i].br())) {      
+        Imgproc.drawContours(outMat, connBlob[i].findAbsContoursFull(), 0, new Scalar(255,255,0), 2);
+        
+        String foundText = findCharacters(connBlob[i]);
+        if(!foundText.equals("Unknown")) {
+          if(foundText.equals("dot")) {
+            foundText = ".";
+          }
+          textList.add(new CharAndLoc(foundText.charAt(0), connBlob[i].tl(), connBlob[i].br()));
+        }
 	    } else if(classSymbolLoc.contains(connBlob[i].tl()) && classSymbolLoc.contains(connBlob[i].br())) {
-	      TemplateMatchResult symbolTmrTmp = new TemplateMatchResult();
+	      MatchResult symbolTmrTmp = new MatchResult();
 	      
         // It is most likely the class symbol
-        Imgproc.drawContours(imgFO.getMat(), connBlob[i].findAbsContoursFull(), 0, new Scalar(0,255,255), 2);
+        Imgproc.drawContours(outMat, connBlob[i].findAbsContoursFull(), 0, new Scalar(0,255,255), 2);
         
-        symbolTmrTmp = findSymbol(connBlob[i].getMat());
-        
-        if(symbolTmr.getPercent() < symbolTmrTmp.getPercent()) {
-          symbolTmr = symbolTmrTmp;
+        // If we have a good result then ignore the rest of the shapes
+        if(symbolTmr.getResult() <= 0.9) {
+          symbolTmrTmp = findSymbol(connBlob[i].getMat());
           
-          outputObj.symbol = symbolTmr.getName();
+          if(symbolTmr.getResult() < symbolTmrTmp.getResult()) {
+            symbolTmr = symbolTmrTmp;
+            
+            outputObj.symbol = symbolTmr.getName();
+          }
         }
 	    } else if(connBlob[i].getY2() < signH/2) {
 	      // It is in the top half, which means it could be Symbol\Explosive number or descriptive text,
 	      // Sometimes picks up bounding box if it is a different colour to bottom half bounding box
-	      Imgproc.drawContours(imgFO.getMat(), connBlob[i].findAbsContoursFull(), 0, new Scalar(255,0,0), 2);
+	      Imgproc.drawContours(outMat, connBlob[i].findAbsContoursFull(), 0, new Scalar(255,0,0), 2);
 	    } else {
-	      //Imgproc.drawContours(imgFO.getMat(), connBlob[i].findAbsContoursFull(), 0, new Scalar(0,0,255), 2);
+	      //Imgproc.drawContours(outMat, connBlob[i].findAbsContoursFull(), 0, new Scalar(0,0,255), 2);
 	    }
 	  }
 	  
-	  winShowRight("Blob " + imgFO.getFilename(), imgFO.getMat());
+	  outputObj.classNum = convertCharAndLocListToString(classNumList);
+	  
+	  String foundText = convertCharAndLocListToString(textList);
+	  outputObj.otherText = ExpectedTextMatcher.match(foundText);
 	  
 	  /* Get Colors */
-	  findSignHalfColors(origImgFO.getMat(), mask, outputObj);
+	  findSignHalfColors(imgFO.getMat(), mask, outputObj);
+	  String output = outputObj.toString() + "\n";
+	  System.out.println(output);
+
+	  // Automatically check if output is correct, if it isnt then pause
+	  BufferedReader br = new BufferedReader(new FileReader("SampleData/expectedResults/" + imgFO.getFilename() + ".txt"));
 	  
-	  System.out.println(outputObj.toString());
-	
-	  winWait();
+	  String[] outputStrings = output.split("\n");
+	  
+	  boolean shouldPause = false;
+	  int i = 0;
+	  String line;
+	  while((line = br.readLine()) != null) {
+	    if(i==0) {
+	      // We dont care about filename, that should be the same anyway
+	      i++;
+	      continue;
+	    }
+	    
+	    if(!line.equals(outputStrings[i])) {
+	      // Not sure if the actual number should be printed or the phrase "A number" so assuming the easiest of the 2
+	      if(outputStrings[i].endsWith("A number")) {
+	        println("Assume its okay: \"" + outputStrings[i] + "\" != \"" + line + "\"\n\n");
+	      } else if(!outputStrings[i].endsWith("Not Implemented")  && !outputStrings[i].equals(line)) {
+	        println("MISMATCH:    \"" + outputStrings[i] + "\" != \"" + line + "\"\n\n");
+
+	        shouldPause = true;
+	      }
+	    }
+
+	    i++;
+	  }
+	  
+	  if(shouldPause) {
+	    winShowRight("Output " + imgFO.getFilename(), outMat);
+	    winWait();
+	  }
+	  
 	  return true;
+  }
+  
+  /*
+   * [TODO] Fix issue with "Dangerous When Wet" sign
+   */
+  private static String convertCharAndLocListToString(TreeSet<CharAndLoc> charLocList) {
+    String returnString;
+    
+    if(charLocList.isEmpty()) {
+      returnString = "(none)";
+    } else {
+      String tmpString = "";
+      
+      CharAndLoc prevCharAndLoc = null;
+      for (CharAndLoc charAndLoc : charLocList) {
+        if(prevCharAndLoc != null) {
+          double rightSideOfPrevChar = prevCharAndLoc.getLoc2().x;
+          double bottomSideOfPrevChar = prevCharAndLoc.getLoc2().y;
+          
+          if(charAndLoc.getLoc().y > bottomSideOfPrevChar) {
+            // Character does not overlap, solves issue of finding a . inside of chars
+            tmpString += " " + charAndLoc.getChar();
+          } else if(charAndLoc.getLoc().x >= rightSideOfPrevChar) {
+            tmpString += charAndLoc.getChar();
+          }
+        } else {
+          tmpString += charAndLoc.getChar();
+        }
+        
+        prevCharAndLoc = charAndLoc;
+      }
+      
+      returnString = tmpString;
+    }
+    
+    return returnString;
+  }
+
+  private static String findCharacters(ConnectedComponentsBlob connBlob) {
+    MatchResult mr = new MatchResult("Unknown");
+    mr.setResult(1.0);
+    double[] hogArray = HOG.createFixedSize(connBlob.getMat(), 30, 30);
+    
+    File dir = new File("./MasksAndTemplates/HOGs/Characters");
+    File[] dirList = dir.listFiles();
+
+    if(dir.isDirectory()) { 
+      if(dirList != null && dirList.length > 0 ) {
+        for(File file : dirList) {
+          try {
+            if(file.isDirectory()) {
+              continue;
+            }
+            String filename = file.getName();
+            
+            double[] charHogArray = Utils.load("./MasksAndTemplates/HOGs/Characters/" + filename);
+            double distance = HOG.calcEuclideanDist(hogArray, charHogArray);
+
+            if(mr.getResult() > distance) {
+              int indexOf = filename.indexOf('_');
+              int indexOfDot = filename.lastIndexOf('.');
+              
+              if(indexOf > -1) {
+                filename = filename.substring(0, indexOf);
+              } else if(indexOfDot > -1) {
+                filename = filename.substring(0, indexOfDot);
+              }
+              
+              mr.setName(filename);
+              mr.setResult(distance);
+            }
+          } catch (MPException e) {
+            e.printStackTrace();
+          }
+        }
+      }
+    }
+    
+    return mr.getName();
+  }
+
+  /*
+   * [TODO] fix character recognition
+   */
+  private static String findNumbers(ConnectedComponentsBlob connBlob) {
+    MatchResult finalTmr = new MatchResult("Unknown");
+    Mat mat = new Mat();
+    connBlob.getMat().copyTo(mat);
+    
+    // match must be at least 50% to count
+    finalTmr.setResult(0.5);
+    
+    boolean gotGoodResult = false;
+    
+    File dir = new File("./MasksAndTemplates/NumTemplates");
+    File[] dirList = dir.listFiles();
+
+    if(dir.isDirectory()) { 
+      if(dirList != null && dirList.length > 0 ) {
+        for(File file : dirList) {
+          try {
+            if(gotGoodResult) {
+              break;
+            }
+            ImageFileObject templ = new ImageFileObject(file, Imgcodecs.IMREAD_GRAYSCALE);
+            MatchResult tmr = new MatchResult();
+            
+            tmr.setResult(0);
+            
+            Mat templMat;
+            templMat = templ.getMat();
+            
+            double templWidthToHeightRatio = (double)templ.getWidth() / (double)templ.getHeight();
+            double matWidthToHeightRatio = (double)mat.width() / (double)mat.height();
+            
+            double ratioDiff = Math.abs(templWidthToHeightRatio - matWidthToHeightRatio);
+            
+            if(ratioDiff < 0.05) {
+              mat = Filter.resizeToPixel(mat, templ.getWidth(), templ.getHeight());
+
+              tmr = MatInfo.templateMatch(mat, templMat,Imgproc.TM_CCORR_NORMED);
+              
+              // println(tmr.getPercent() + " chance to be " + templ.getName());
+              
+              if(finalTmr.getResult() < tmr.getResult()) {
+                String name = templ.getName();
+                int indexOf = name.indexOf('_');
+                
+                finalTmr = tmr;
+                
+                if(indexOf > -1) {
+                  name = name.substring(0, indexOf);
+                }
+                finalTmr.setName(name);
+                
+                if(finalTmr.getResult() > 0.9) {
+                  gotGoodResult = true;
+                  break;
+                }
+              }
+            }
+          } catch (IOException e) {
+            
+          }
+        }
+      }
+    }
+    
+    return finalTmr.getName();
   }
 
   private static ConnectedComponentsBlob[] findBlobs(Mat mat, Mat mask) {
@@ -202,6 +411,9 @@ public class MPAssignment {
 
     Mat outBlack = Filter.thresholdInv(blackWhite, 30);
     Mat outWhite = Filter.threshold(blackWhite, 160);
+    
+    winShow("", outBlack);
+    winWait();
     
     ConnectedComponents connCompBlack = new ConnectedComponents(outBlack, mask);
     ConnectedComponents connCompWhite = new ConnectedComponents(outWhite, mask);
@@ -252,15 +464,17 @@ public class MPAssignment {
     outputObj.bottomColor = MatInfo.getMainColor(bottomHalf, bottomMask);
   }
   
-  private static TemplateMatchResult findSymbol(Mat mat) {
-    TemplateMatchResult finalTmr = new TemplateMatchResult("Unknown");
+  // Very similar to find character but there is a few changes in different spots
+  // Which make it very hard to put subcode into functions
+  private static MatchResult findSymbol(Mat mat) {
+    MatchResult finalTmr = new MatchResult("Unknown");
+    
+    // match must be at least 50% to count
+    finalTmr.setResult(0.5);
     
     boolean gotGoodResult = false;
     
-    // match must be at least 50% to count
-    finalTmr.setPercent(0.5);
-    
-    File dir = new File("./MasksAndTemplates/Templates");
+    File dir = new File("./MasksAndTemplates/SymbolTemplates");
     File[] dirList = dir.listFiles();
 
     if(dir.isDirectory()) { 
@@ -271,27 +485,27 @@ public class MPAssignment {
                 break;
               }
               ImageFileObject templ = new ImageFileObject(file, Imgcodecs.IMREAD_GRAYSCALE);
-              TemplateMatchResult tmr = new TemplateMatchResult();
+              MatchResult tmr = new MatchResult();
               
-              tmr.setPercent(0);
+              tmr.setResult(0);
               
-              // for scale 45 we will just check scale 100 since it is the most likely result
-              for(int scale = 45; scale <= 200; scale+=5) {                
-                Mat templMat;
-                if(scale == 45) {
-                  templMat = templ.getMat();
-                } else if(scale == 100) {
-                  // alreadyChecked so skip
-                  continue;
-                } else {
-                  templMat = Filter.resizeToRatio(templ.getMat(), ((double)scale/100));
-                }
+              Mat templMat;
+              templMat = templ.getMat();
+              
+              double templWidthToHeightRatio = (double)templ.getWidth() / (double)templ.getHeight();
+              double matWidthToHeightRatio = (double)mat.width() / (double)mat.height();
+              
+              double ratioDiff = Math.abs(templWidthToHeightRatio - matWidthToHeightRatio);
+              
+              if(ratioDiff < 0.05) {
+                // Should rescale images up to the same size without ruining ratio
+                templMat = Filter.resizeToPixelWidth(templ.getMat(), mat.width());
                 
                 if(templMat.width() <= mat.width() && templMat.height() <= mat.height()) {
-                  // Cant save Laplacian templates or resize will cause issues
-                  tmr = MatInfo.templateMatch(Filter.laplacian(mat), Filter.laplacian(templMat));
+                  // Cant save sobel templates or resize will cause issues
+                  tmr = MatInfo.templateMatch(Filter.sobel(mat), Filter.sobel(templMat));
 
-                  if(finalTmr.getPercent() < tmr.getPercent()) {
+                  if(finalTmr.getResult() < tmr.getResult()) {
                     String name = templ.getName();
                     int indexOf = name.indexOf('_');
                     
@@ -302,7 +516,7 @@ public class MPAssignment {
                     }
                     finalTmr.setName(name);
                     
-                    if(tmr.getPercent() > 0.9) {
+                    if(finalTmr.getResult() > 0.9) {
                       gotGoodResult = true;
                       break;
                     }
@@ -312,31 +526,36 @@ public class MPAssignment {
             } catch (IOException e) {
               
             }
+          }
         }
       }
-    }
-    
     return finalTmr;
   }
   
   @SuppressWarnings("unused")
   private static void PRACWORK(File file, ImageFileObject imgFO, ImageFileObject origImgFO) {
-    Mat out = imgFO.copy().getMat();
-    Mat filtered = Filter.prewitt(imgFO.convert(Imgproc.COLOR_BGR2GRAY).getMat());
+    ConnectedComponentsBlob[] connBlob = findBlobs(Imgcodecs.imread("Output/ABC2.png"), new Mat());
     
-    FeatureDetector mser = FeatureDetector.create(FeatureDetector.MSER);
-    //MSER mser = .create(15, 60, 10000, 0.25, 1, 1000, 1, 1, 1);
-    
-    MatOfKeyPoint msers = new MatOfKeyPoint();
-    mser.detect(filtered, msers);
-    
-    for(int row = 0; row < msers.rows(); row++) {
-      Point p = new Point(msers.get(row, 0)[0], msers.get(row, 0)[1]);
-      Imgproc.drawMarker(out, p, new Scalar(0,0,255));
+    for(int i = 0; i < connBlob.length; i++) {      
+      if(connBlob[i].getWidth() < 10 && connBlob[i].getHeight() < 10) {
+        double[] hogArray = HOG.createFixedSize(connBlob[i].getMat(), 20, 20);
+
+        Mat curr = new Mat();
+        
+        Imgcodecs.imread("Output/ABC2.png").copyTo(curr);
+        // It is most likely the text
+        Imgproc.drawContours(curr, connBlob[i].findAbsContoursFull(), 0, new Scalar(0,0,255), 2);
+        
+        try {
+          if(hogArray.length > 0) {
+            Utils.saveAs(hogArray, "./Output/" + connBlob[i].hashCode(), "hog");
+          }
+        } catch (MPException e1) {
+          // TODO Auto-generated catch block
+          e1.printStackTrace();
+        }
+      }
     }
-    
-    winShowRight("out "+ imgFO.getFilename(), out);
-    winWait();
   }
   
   static void println(String message) {
@@ -402,15 +621,19 @@ public class MPAssignment {
     Scanner input = new Scanner(System.in);
     input.nextLine();
     
+    closeWins();
+
+    /* HighGui calls with third party code since downgrading OpenCV removed gui functionality
+    HighGui.waitKey();
+    */
+  }
+  
+  static void closeWins() {
     for(JFrame frame : _frameList) {
       frame.dispose();
     }
     
     _frameList.clear();
-
-    /* HighGui calls with third party code since downgrading OpenCV removed gui functionality
-    HighGui.waitKey();
-    */
   }
   
   // [TODO] REMOVE, THIS IS THIRD PARTY CODE USED TO DEBUG AND DISPLAY IMAGES

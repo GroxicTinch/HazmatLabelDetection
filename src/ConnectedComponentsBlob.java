@@ -114,6 +114,7 @@ public class ConnectedComponentsBlob {
     return _mat;
   }
   
+  // [TODO] fix, currently only accurate for rectangles\squares
   public int getPerimeter() {
     return (_matWidth + _matHeight) * 2;
   }
@@ -184,8 +185,12 @@ public class ConnectedComponentsBlob {
   }
   
   // Casting because it rounds the number without it
-  public double ratio() {
-    return (double)size() / (double)(getWidth() * (double)getHeight());
+  public double ratioForegroundBackground() {
+    return (double)size() / ((double)getWidth() * (double)getHeight());
+  }
+  
+  public double ratioWidthHeight() {
+    return (double)getWidth() / (double)getHeight();
   }
   
   public int size() {

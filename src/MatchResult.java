@@ -1,23 +1,23 @@
 import org.opencv.core.Rect;
 
-public class TemplateMatchResult {
+public class MatchResult {
   private String _name;
   private Rect _rect;
-  private double _percent;
+  private double _result;
   
-  public TemplateMatchResult() {
+  public MatchResult() {
     _name = "";
   }
 
-  public TemplateMatchResult(String name) {
+  public MatchResult(String name) {
     _name = name;
-    _percent = 0;
+    _result = 0;
   }
 
-  public TemplateMatchResult(String name, Rect rect, double percent) {
+  public MatchResult(String name, Rect rect, double result) {
     _name = name;
     _rect = rect;
-    _percent = percent;
+    _result = result;
   }
   
   
@@ -30,8 +30,8 @@ public class TemplateMatchResult {
     return _rect;
   }
 
-  public double getPercent() {
-    return _percent;
+  public double getResult() {
+    return _result;
   }
 
   
@@ -44,7 +44,7 @@ public class TemplateMatchResult {
     _rect = rect;
   }
 
-  public void setPercent(double percent) {
-    _percent = percent;
+  public void setResult(double result) {
+    _result = result;
   }
 }

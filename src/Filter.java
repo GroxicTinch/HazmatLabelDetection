@@ -191,7 +191,7 @@ public class Filter {
   public static Mat gaussian(Mat img, int size, double sigma) {
     Mat outputMat = new Mat();
     
-    /*Mat kernel = Utils.matPut(CvType.CV_32F, new int[][]{
+    Mat kernel = Utils.matPut(CvType.CV_32F, new double[][]{
       {1, 4, 7, 4,1},
       {4,16,26,16,4},
       {7,26,41,26,7},
@@ -200,9 +200,9 @@ public class Filter {
     
     Core.divide(kernel, new Scalar(273), kernel);
     
-    Imgproc.filter2D(img, outputMat, -1, kernel);*/
+    Imgproc.filter2D(img, outputMat, -1, kernel);
     
-   Imgproc.GaussianBlur(img, outputMat, new Size(5,5), sigma);
+    //Imgproc.GaussianBlur(img, outputMat, new Size(5,5), sigma);
     
     return outputMat;
   }
@@ -495,8 +495,17 @@ public class Filter {
   
   public static Mat resizeToPixelWidth(Mat mat, int newWidth) {
     Mat out = new Mat();
-    double ratio = (double)mat.width() / (double)newWidth;
-    Size size = new Size(newWidth, mat.height() * ratio);
+    double ratio = (double)newWidth / (double)mat.width();
+    Size size = new Size(newWidth, (double)mat.height() * ratio);
+
+    Imgproc.resize(mat, out, size);
+    return out;
+  }
+  
+  public static Mat resizeToPixelHeight(Mat mat, int newHeight) {
+    Mat out = new Mat();
+    double ratio = (double)newHeight / (double)mat.height();
+    Size size = new Size((double)mat.width() * ratio, newHeight);
 
     Imgproc.resize(mat, out, size);
     return out;

@@ -10,55 +10,77 @@ public class HOG {
   private static int _cellWidth;
   private static int _cellHeight;
   
-  // I know global variables are frowned upon but going a few functions deep
-  // passing it along every time will use a lot of memory
-  private static double[][][] _cellBin;
+  public static double calcEuclideanDist(double[] hog1, double[] hog2) {
+    double total = 0;
+    
+    if(hog1.length != hog2.length) {
+      System.out.println("hog totals are different.");
+      return -1;
+    }
+    
+    // Fill labeled objects with random colors
+    
+    for(int i = 0; i < hog1.length; i++) {
+      total += Math.pow((hog1[i] - hog2[i]), 2);
+    }
+    
+    //total = Math.sqrt(total);
+    
+    return total;
+  }
   
-  public static Mat create(Mat img) {
+  public static double[] createFixedSize(Mat mat, int newWidth, int newHeight) {
+    double[] array;
+    double whRatio = (double)mat.width() / (double)mat.height();
+    mat = Filter.resizeToPixel(mat, newWidth, newHeight);
+    array = create(mat);
+    
+    array[array.length-1] = whRatio;
+    return array;
+  }
+  
+  public static double[] create(Mat mat) {
+    double[][][] cellBin;
     Mat gradXMat = new Mat();
     Mat gradYMat = new Mat();
-    
-    Mat grayMat = new Mat();
-    Mat colorMat = Filter.gaussian(img, 12, 3); // Not interested in any details but average colour
     
     Mat mag = new Mat();
     Mat angle = new Mat();
     
-    _cellWidth = (int) Math.floor(img.cols() / _cellSize);
-    _cellHeight = (int) Math.floor(img.rows() / _cellSize);
-
-    // Create gradients
-    Imgproc.cvtColor(img, grayMat, Imgproc.COLOR_BGR2GRAY);
+    _cellWidth = (int) Math.floor(mat.cols() / _cellSize);
+    _cellHeight = (int) Math.floor(mat.rows() / _cellSize);
     
-    // [FIXME] Need to fix my function
+    // [TODO] Need to fix my function
     /*gradXMat = Filter.gradientX(grayMat);
     gradYMat = Filter.gradientY(grayMat);*/
 
-    Imgproc.Sobel(img, gradXMat, CvType.CV_32F, 1, 0);
-    Imgproc.Sobel(img, gradYMat, CvType.CV_32F, 0, 1);
+    Imgproc.Sobel(mat, gradXMat, CvType.CV_32F, 1, 0);
+    Imgproc.Sobel(mat, gradYMat, CvType.CV_32F, 0, 1);
     
     Core.cartToPolar(gradXMat, gradYMat, mag, angle, true);
 
-    _cellBin = convertToAngleBin(mag, angle /*, _cellBin */);
+    cellBin = convertToAngleBin(mag, angle);
     
-    return generateDescriptor(/* _cellBin */);
+    return generateDescriptor(cellBin);
   }
 
-  private static void binNormalize(double norm, int cellRow, int cellCol/*, _cellBin */) {
-    for(int i = 0; i < _cellBin[cellRow][cellCol].length; i++) {
+  private static double[][][] binNormalize(double norm, int cellRow, int cellCol, double[][][] cellBin) {
+    for(int i = 0; i < cellBin[cellRow][cellCol].length; i++) {
       if(norm != 0) {
-        _cellBin[cellRow][cellCol][i] /= norm;
+        cellBin[cellRow][cellCol][i] /= norm;
       }
     }
+    
+    return cellBin;
   }
   
-  private static void blockNormalize(int cellRow, int cellCol/*, _cellBin */) {
+  private static double[][][] blockNormalize(int cellRow, int cellCol, double[][][] cellBin) {
     double norm = 0;
     
     // We want the current cell, and the cells 1 to the left, 1 above and the cell up to the left.
     for(int i = 0; i <= 1; i++) {
       for(int ii = 0; ii <= 1; ii++) {
-        norm += sumOfBinsSqred(_cellBin[cellRow-i][cellCol-ii]);
+        norm += sumOfBinsSqred(cellBin[cellRow-i][cellCol-ii]);
       }
     }
     
@@ -67,27 +89,29 @@ public class HOG {
     // The top left of the 2x2 is the only cell that wont be looked at for normalization again
     // so it is safe to normalize it
     
-    binNormalize(norm, cellRow-1, cellCol-1);
+    cellBin = binNormalize(norm, cellRow-1, cellCol-1, cellBin);
         
     // If we are working on the far right then the top right wont be looked at for normalization again
     if(cellCol == _cellWidth-1) {
-      binNormalize(norm, cellRow-1, cellCol);
+      cellBin = binNormalize(norm, cellRow-1, cellCol, cellBin);
     }
     
     // If we are working on the very bottom then the left wont be looked at for normalization again
     if(cellRow == _cellHeight-1) {
-      binNormalize(norm, cellRow, cellCol-1);
+      cellBin = binNormalize(norm, cellRow, cellCol-1, cellBin);
     }
     
     // If we are on the last cell we need to normalize it
     if(cellCol == _cellWidth-1 && cellRow == _cellHeight-1) {
-      binNormalize(norm, cellRow, cellCol);
+      cellBin = binNormalize(norm, cellRow, cellCol, cellBin);
     }
+    
+    return cellBin;
   }
   
-  private static double[][][] convertToAngleBin(Mat mag, Mat angle/*, _cellBin */) {
+  private static double[][][] convertToAngleBin(Mat mag, Mat angle) {
     // Bins should be 9, bin 0 = angle 0 to 19, bin 1 angle 20 to 39 etc
-    _cellBin = new double[_cellHeight][_cellWidth][9];
+    double[][][] cellBin = new double[_cellHeight][_cellWidth][9];
     
     // Loop through each cell in the image
     for( int cellRow = 0; cellRow < _cellHeight; cellRow++){
@@ -109,36 +133,41 @@ public class HOG {
             int binNum = (int) (currAngle - diffToBin) / 20;
             binNum %= 9; // We want 180(which would end up bin 9) to be in bin 0
             
-            _cellBin[cellRow][cellCol][binNum] += currMag * (((20 - diffToBin) * 5) / 100);
-            _cellBin[cellRow][cellCol][(binNum + 1) % 9] += currMag * ((diffToBin * 5) / 100);
+            cellBin[cellRow][cellCol][binNum] += currMag * (((20 - diffToBin) * 5) / 100);
+            cellBin[cellRow][cellCol][(binNum + 1) % 9] += currMag * ((diffToBin * 5) / 100);
           }
         }
         
         // Once we have filled in the cellBin for this block, check to see if it is not the top or leftmost row
         // If it is neither then we do a block normalization
         if(cellRow != 0 && cellCol != 0) {
-          blockNormalize(cellRow, cellCol/*, _cellBin */);
+          cellBin = blockNormalize(cellRow, cellCol, cellBin);
         }
       }
     }
     
-    return _cellBin;
+    return cellBin;
   }
   
-  private static Mat generateDescriptor(/* cellBin */) {
-    int binCount = _cellBin[0][0].length;
+  private static double[] generateDescriptor(double[][][] cellBin) {
+    if(cellBin.length == 0 || cellBin[0].length == 0) {
+      return new double[0];
+    }
+    int binCount = cellBin[0][0].length;
     
     int currIndex = 0;
-    Mat descriptor = Mat.zeros(1, _cellWidth * _cellHeight * binCount, CvType.CV_32F);
+    
+    // Last will be empty unless manually written to, using for an extra ratio distance
+    double[] descriptor = new double[_cellWidth * _cellHeight * binCount + 2];
     
     for( int cellRow = 0; cellRow < _cellHeight; cellRow++){
       for( int cellCol = 0; cellCol < _cellWidth; cellCol++){
-        double[] currCellBins = _cellBin[cellRow][cellCol];
+        double[] currCellBins = cellBin[cellRow][cellCol];
         
         for( int bin = 0; bin < binCount; bin++) {
           currIndex++;
           //int newCol = (cellCol * binCount) + bin;
-          descriptor.put(0, currIndex, currCellBins[bin]);
+          descriptor[currIndex] = currCellBins[bin];
         }
       }
     }
