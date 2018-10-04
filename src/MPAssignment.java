@@ -1,24 +1,12 @@
-import java.awt.FlowLayout;
-import java.awt.image.BufferedImage;
-import java.io.BufferedReader;
-import java.io.ByteArrayInputStream;
 import java.io.File;
-import java.io.FileReader;
 import java.io.IOException;
-import java.io.InputStream;
 import java.util.ArrayList;
 import java.util.Arrays;
-import java.util.Scanner;
 import java.util.TreeSet;
 
-import javax.imageio.ImageIO;
-import javax.swing.ImageIcon;
 import javax.swing.JFrame;
-import javax.swing.JLabel;
-
 import org.opencv.core.Core;
 import org.opencv.core.Mat;
-import org.opencv.core.MatOfByte;
 import org.opencv.core.Point;
 import org.opencv.core.Rect;
 import org.opencv.imgcodecs.Imgcodecs;
@@ -184,41 +172,6 @@ public class MPAssignment {
 	  findSignHalfColors(imgFO.getMat(), mask, outputObj);
 	  String output = outputObj.toString() + "\n";
 	  System.out.println(output);
-
-	  /* Debugging code, ideally you should not be seeing this */
-	  // Automatically check if output is correct, if it isn't then pause
-	  BufferedReader br = new BufferedReader(new FileReader("SampleData/expectedResults/" + imgFO.getFilename() + ".txt"));
-	  
-	  String[] outputStrings = output.split("\n");
-	  
-	  boolean shouldPause = false;
-	  int i = 0;
-	  String line;
-	  while((line = br.readLine()) != null) {
-	    if(i==0) {
-	      // We dont care about filename, that should be the same anyway
-	      i++;
-	      continue;
-	    }
-	    
-	    if(!line.equals(outputStrings[i])) {
-	      // Not sure if the actual number should be printed or the phrase "A number" so assuming the easiest of the 2
-	      if(outputStrings[i].endsWith("A number")) {
-	        System.out.println("Assume its okay: \"" + outputStrings[i] + "\" != \"" + line + "\"\n\n");
-	      } else if(!outputStrings[i].endsWith("Not Implemented")  && !outputStrings[i].equals(line)) {
-	        System.out.println("MISMATCH:    \"" + outputStrings[i] + "\" != \"" + line + "\"  found: " + foundText + "\n\n");
-
-	        shouldPause = true;
-	      }
-	    }
-
-	    i++;
-	  }
-	  
-	  if(shouldPause) {
-	    winShow("",imgFO.getMat());
-	    winWait();
-	  }
 	  
 	  return true;
   }
@@ -491,49 +444,4 @@ public class MPAssignment {
       }
     return finalTmr;
   }
-  
-  static JFrame winShow(String title , Mat img) {
-    return imshow(title, img);
-  }
-  
-  static void winWait() {
-    Scanner input = new Scanner(System.in);
-    input.nextLine();
-    
-    closeWins();
-  }
-  
-  static void closeWins() {
-    for(JFrame frame : _frameList) {
-      frame.dispose();
-    }
-    
-    _frameList.clear();
-  }
-  
-  // [TODO] REMOVE, THIS IS THIRD PARTY CODE USED TO DEBUG AND DISPLAY IMAGES
-  public static JFrame imshow(String title, Mat src) {
-    BufferedImage bufImage = null;
-    try {
-        MatOfByte matOfByte = new MatOfByte();
-        Imgcodecs.imencode(".png", src, matOfByte); 
-        byte[] byteArray = matOfByte.toArray();
-        InputStream in = new ByteArrayInputStream(byteArray);
-        bufImage = ImageIO.read(in);
-
-        JFrame frame = new JFrame(title);
-        frame.getContentPane().setLayout(new FlowLayout());
-        frame.getContentPane().add(new JLabel(new ImageIcon(bufImage)));
-        frame.pack();
-        frame.setVisible(true);
-        frame.setDefaultCloseOperation(JFrame.EXIT_ON_CLOSE);
-        
-        _frameList.add(frame);
-        
-        return frame;
-    } catch (Exception e) {
-        e.printStackTrace();
-        return null;
-    }
-}
 }
