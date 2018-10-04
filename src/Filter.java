@@ -7,6 +7,10 @@ import org.opencv.imgproc.Imgproc;
 
 public class Filter {
   // Apply Sobel filtering to generate edges
+  
+  /*
+   * Adapted from "Hoy, D. 2018. Practical 1: Image fundamentals. https://lms.curtin.edu.au/bbcswebdav/pid-6105312-dt-content-rid-31739545_1/courses/2018_2_COMP3007_V1_L1_A1_INT_642633/01_image_fundamentals.pdf"
+   */
   public static Mat sobel(Mat img) {
     Mat outputMat = new Mat();
     
@@ -87,6 +91,9 @@ public class Filter {
   }
   
   // Crop\Resize
+  /*
+   * Adapted from "Hoy, D. 2018. Practical 1: Image fundamentals. https://lms.curtin.edu.au/bbcswebdav/pid-6105312-dt-content-rid-31739545_1/courses/2018_2_COMP3007_V1_L1_A1_INT_642633/01_image_fundamentals.pdf"
+   */
   public static Mat crop(Mat mat, Point p1, int width, int height) {
     return crop(mat, p1, new Point(p1.x + width, p1.y + height));
   }
@@ -95,6 +102,9 @@ public class Filter {
     return mat.submat((int)p1.y, (int)p2.y, (int)p1.x, (int)p2.x);
   }
   
+  /*
+   * Adapted from "Hoy, D. 2018. Practical 1: Image fundamentals. https://lms.curtin.edu.au/bbcswebdav/pid-6105312-dt-content-rid-31739545_1/courses/2018_2_COMP3007_V1_L1_A1_INT_642633/01_image_fundamentals.pdf"
+   */
   public static Mat resizeToPixel(Mat mat, int newWidth, int newHeight) {
     Mat out = new Mat();
     Size size = new Size(newWidth, newHeight);

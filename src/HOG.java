@@ -3,8 +3,9 @@ import org.opencv.core.CvType;
 import org.opencv.core.Mat;
 import org.opencv.imgproc.Imgproc;
 
-// Used the following website for help
-// https://www.learnopencv.com/histogram-of-oriented-gradients/
+/*
+ * Adapted from "Mallick, S. 2016. Histogram of Oriented Gradients. https://www.learnopencv.com/histogram-of-oriented-gradients/"
+ */
 public class HOG {
   private static int _cellSize = 8;
   private static int _cellWidth;

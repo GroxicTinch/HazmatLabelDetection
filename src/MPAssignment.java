@@ -357,6 +357,8 @@ public class MPAssignment {
   /*
    * [TODO] remove\mask found blobs from Mat going to findSignHalfColors() to lower chance of
    *        text + symbols being picked up as text
+   *        
+   * Adapted from "Hoy, D. 2018. Practical 2: Image processing. https://lms.curtin.edu.au/bbcswebdav/pid-6105312-dt-content-rid-31739546_1/courses/2018_2_COMP3007_V1_L1_A1_INT_642633/02_image_processing.pdf"
    */
   private static void findSignHalfColors(Mat mat, Mat mask, OutputObject outputObj) {
     int newHeight = mat.rows() / 2;

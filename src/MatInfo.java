@@ -17,6 +17,9 @@ public class MatInfo {
     return getMainColor(img, mask);
   }
   
+  /*
+   * Adapted from "Hoy, D. 2018. Practical 2: Image processing. https://lms.curtin.edu.au/bbcswebdav/pid-6105312-dt-content-rid-31739546_1/courses/2018_2_COMP3007_V1_L1_A1_INT_642633/02_image_processing.pdf"
+   */
   public static String getMainColor(Mat img, Mat mask) {
     int saturationThreshold = 51; // approx 20%
     int brightnessThreshold = 76; // approx 30%
@@ -140,7 +143,6 @@ public class MatInfo {
     Double percent;
     
     Imgproc.matchTemplate(mat, templ, result, matchMethod);
-    //Core.normalize(result, result, 0, 255, Core.NORM_MINMAX, -1, new Mat());
     MinMaxLocResult mmlr = Core.minMaxLoc(result);
     
     if(matchMethod == Imgproc.TM_SQDIFF || matchMethod == Imgproc.TM_SQDIFF_NORMED) {
